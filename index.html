@@ -819,6 +819,8 @@
           const SCHOOL_INFO_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4JdOFroIT9UltdYJBTutnhvBzgiEs06Q68bSCFjwQjcxpgmPBhDllJc2k9j4SNUn6Wl8IrNzrHiAz/pub?output=csv";
           const CALENDAR_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTCCe7oOzR-NunRqWbdMLyZGl69fkYPGBbwqCRO2pmfKVNFjoHCy7lgkKwkYNi8_t15XJpeaL9pUI1u/pub?output=csv";
           const NEWS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM7phwJ5AVJBlfvhFoZ9YNI-bU4hM4U9_qKayboDA5l70jrUeNm1x6btc9QjyaSMt_kQXLQi7_MzOn/pub?output=csv";
+          const DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbxYT4oyZic6b4es3G0rJZgg1zogH5yOowezsRQ6N-ypqDHB00jB7YVSoMUvGyr9rr01/exec";
+          const DRIVE_UPLOAD_API_KEY = "skk-8208";
           const SHEET_ID = "1CTW31-X7CLGsQhgbbhkitaRbCavB60XPwgcbqOs9L-8";
           const SHEET_CSV_URL_GURU = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
           const SHEET_CSV_URL_KELAS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=KELAS`;
@@ -834,6 +836,7 @@
           const [draftSchoolInfo, setDraftSchoolInfo] = useState(() => loadLocal('schoolInfo', INITIAL_SCHOOL_INFO));
           const [draftNewsUpdates, setDraftNewsUpdates] = useState(() => loadLocal('newsUpdates', INITIAL_NEWS_UPDATES));
           const [saveStatus, setSaveStatus] = useState("");
+          const [uploadStatus, setUploadStatus] = useState("");
           const [pentadbiran, setPentadbiran] = useState(() => loadLocal('pentadbiran', INITIAL_PENTADBIRAN));
           const [draftPentadbiran, setDraftPentadbiran] = useState(() => loadLocal('pentadbiran', INITIAL_PENTADBIRAN));
           const [pentadbiranStatus, setPentadbiranStatus] = useState("");
@@ -1172,22 +1175,80 @@
             });
           };
 
-          const handlePentadbiranUpload = (index, file) => {
+          const uploadFileToDrive = async (file, fileNameOverride) => {
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = typeof reader.result === "string" ? reader.result : "";
+                const parts = result.split(",");
+                resolve(parts[1] || "");
+              };
+              reader.onerror = () => reject(new Error("Gagal membaca fail."));
+              reader.readAsDataURL(file);
+            });
+
+            const payload = {
+              apiKey: DRIVE_UPLOAD_API_KEY,
+              fileName: fileNameOverride || file.name || `upload-${Date.now()}`,
+              mimeType: file.type || "image/jpeg",
+              base64,
+            };
+
+            const res = await fetch(DRIVE_UPLOAD_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!json.ok || !json.url) {
+              throw new Error(json.error || "Gagal muat naik ke Drive.");
+            }
+            return json.url;
+          };
+
+          const uploadDataUrlToDrive = async (dataUrl, fileNameOverride) => {
+            const parts = dataUrl.split(",");
+            const header = parts[0] || "";
+            const base64 = parts[1] || "";
+            const match = header.match(/data:(.*);base64/i);
+            const mimeType = match ? match[1] : "image/jpeg";
+            const payload = {
+              apiKey: DRIVE_UPLOAD_API_KEY,
+              fileName: fileNameOverride || `upload-${Date.now()}.jpg`,
+              mimeType,
+              base64,
+            };
+            const res = await fetch(DRIVE_UPLOAD_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!json.ok || !json.url) {
+              throw new Error(json.error || "Gagal muat naik ke Drive.");
+            }
+            return json.url;
+          };
+
+          const handlePentadbiranUpload = async (index, file) => {
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-              const result = typeof reader.result === "string" ? reader.result : "";
+            setUploadStatus("Muat naik gambar pentadbiran...");
+            try {
+              const url = await uploadFileToDrive(file, `pentadbiran-${index}-${Date.now()}`);
               setDraftPentadbiran(prev => {
                 const updated = [...prev];
                 updated[index] = {
                   ...updated[index],
-                  photoData: result,
-                  photoMode: "upload",
+                  photoUrl: url,
+                  photoMode: "url",
+                  photoData: "",
                 };
                 return updated;
               });
-            };
-            reader.readAsDataURL(file);
+              setUploadStatus("Gambar pentadbiran berjaya dimuat naik.");
+            } catch (err) {
+              setUploadStatus("Gagal muat naik gambar pentadbiran.");
+            }
           };
 
           const removePentadbiran = (index) => {
@@ -1262,35 +1323,31 @@
             setBackgroundStatus("Disimpan pada " + new Date().toLocaleTimeString('ms-MY'));
           };
 
-          const handleBackgroundUpload = (file) => {
+          const handleBackgroundUpload = async (file) => {
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-              const result = typeof reader.result === "string" ? reader.result : "";
-              setDraftBackground(prev => ({
-                ...prev,
-                data: result,
-                mode: "upload"
-              }));
-            };
-            reader.readAsDataURL(file);
+            setUploadStatus("Muat naik latar belakang...");
+            try {
+              const url = await uploadFileToDrive(file, `background-${Date.now()}`);
+              setDraftBackground({ mode: "url", url, data: "" });
+              setUploadStatus("Latar belakang berjaya dimuat naik.");
+            } catch (err) {
+              setUploadStatus("Gagal muat naik latar belakang.");
+            }
           };
 
-          const handleLogoUpload = (file) => {
+          const handleLogoUpload = async (file) => {
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-              const result = typeof reader.result === "string" ? reader.result : "";
+            setUploadStatus("Muat naik logo sekolah...");
+            try {
+              const url = await uploadFileToDrive(file, `logo-${Date.now()}`);
               setDraftSchoolInfo(prev => ({
                 ...prev,
-                logo: {
-                  ...(prev.logo || { mode: "upload", url: "", data: "" }),
-                  data: result,
-                  mode: "upload"
-                }
+                logo: { ...(prev.logo || { mode: "url", url: "" }), mode: "url", url, data: "" },
               }));
-            };
-            reader.readAsDataURL(file);
+              setUploadStatus("Logo sekolah berjaya dimuat naik.");
+            } catch (err) {
+              setUploadStatus("Gagal muat naik logo sekolah.");
+            }
           };
 
           const handleHmPhotoUpload = (file) => {
@@ -1428,15 +1485,26 @@
               imageSmoothingQuality: "high",
             });
             const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-            setDraftSchoolInfo(prev => ({
-              ...prev,
-              hmPhoto: {
-                ...(prev.hmPhoto || { mode: "upload", url: "", data: "" }),
-                data: dataUrl,
-                mode: "upload"
-              }
-            }));
-            setHmCropOpen(false);
+            setUploadStatus("Muat naik foto Guru Besar...");
+            uploadDataUrlToDrive(dataUrl, `guru-besar-${Date.now()}.jpg`)
+              .then((url) => {
+                setDraftSchoolInfo(prev => ({
+                  ...prev,
+                  hmPhoto: {
+                    ...(prev.hmPhoto || { mode: "url", url: "" }),
+                    url,
+                    data: "",
+                    mode: "url",
+                  }
+                }));
+                setUploadStatus("Foto Guru Besar berjaya dimuat naik.");
+              })
+              .catch(() => {
+                setUploadStatus("Gagal muat naik foto Guru Besar.");
+              })
+              .finally(() => {
+                setHmCropOpen(false);
+              });
           };
 
           const cancelHmCrop = () => {
@@ -3086,6 +3154,9 @@
                       </button>
                       <span className="text-xs text-slate-500">{saveStatus}</span>
                     </div>
+                    {uploadStatus && (
+                      <p className="mt-2 text-xs text-slate-500">{uploadStatus}</p>
+                    )}
                   </div>
                 );
 
