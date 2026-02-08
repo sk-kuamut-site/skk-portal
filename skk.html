@@ -1,0 +1,3329 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengurusan Sekolah</title>
+    
+    <!-- 1. Pemuatan Tailwind CSS (Untuk Design) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        // Tema Biru Cerah (Sky Blue)
+                        sky: {
+                            400: '#38bdf8', 
+                            500: '#0ea5e9', 
+                            600: '#0284c7', 
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 2. Pemuatan React & ReactDOM (Enjin Aplikasi) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 3. Babel (Untuk baca kod React dalam browser) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- PapaParse & Lucide (Untuk OPR) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Cropper.js (untuk edit/crop gambar) -->
+    <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
+    <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
+
+    <!-- Style Tambahan -->
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #e2e8f0; } 
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* TEMA: Gradien Biru & Purple (Smooth Animation) */
+        .header-animated-bg {
+            background: linear-gradient(-35deg, #0ea5e9, #2563eb, #6366f1, #8b5cf6, #0ea5e9);
+            background-size: 400% 400%;
+            animation: gradientFlow 12s ease infinite;
+        }
+
+        .header-ornament {
+            background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.22), transparent 45%),
+                        radial-gradient(circle at 80% 40%, rgba(255,255,255,0.18), transparent 50%),
+                        linear-gradient(120deg, rgba(255,255,255,0.08), transparent 60%);
+            mix-blend-mode: screen;
+        }
+
+        /* Animasi Grafik Bebas */
+        @keyframes float-organic-1 {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            33% { transform: translate(30px, -50px) rotate(120deg) scale(1.1); }
+            66% { transform: translate(-20px, 20px) rotate(240deg) scale(0.9); }
+            100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+        }
+        
+        @keyframes float-organic-2 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-40px, 40px) rotate(-45deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        @keyframes float-organic-3 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, 0px) scale(1.2); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+        
+        .shape-float-1 { animation: float-organic-1 20s infinite linear; }
+        .shape-float-2 { animation: float-organic-2 25s infinite ease-in-out; }
+        .shape-float-3 { animation: float-organic-3 18s infinite ease-in-out; }
+
+        /* Animasi Dot Berkilau (Active Dot) - Lebih Besar & Terang */
+        @keyframes active-dot {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.8); box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.6); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Shadow ke atas (Negative Y offset) dengan warna Sky Blue */
+        .shadow-up-flow {
+            box-shadow: 0 -15px 40px -10px rgba(14, 165, 233, 0.4); 
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .chart-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-hover svg {
+            transition: transform 0.25s ease, filter 0.25s ease;
+            transform-origin: center center;
+        }
+
+        .chart-hover:hover svg {
+            transform: scale(1.08);
+            filter: drop-shadow(0 8px 18px rgba(14, 165, 233, 0.25));
+        }
+
+        .opr-scope { font-family: 'Inter', sans-serif; }
+        .opr-scope .loader { border: 3px solid #f3f3f3; border-top: 3px solid #0ea5e9; border-radius: 50%; width: 20px; height: 20px; animation: spin-loader 1s linear infinite; }
+        @keyframes spin-loader { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // Komponen Ikon
+        const Icon = ({ children, size = 20, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+
+        const Home = (p) => <Icon {...p}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></Icon>;
+        const School = (p) => <Icon {...p}><path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z"></path><path d="M5 6V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"></path><path d="M18 13v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6"></path></Icon>;
+        const Users = (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></Icon>;
+        const BookOpen = (p) => <Icon {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></Icon>;
+        const UserCheck = (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></Icon>;
+        const Activity = (p) => <Icon {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></Icon>;
+        const FolderOpen = (p) => <Icon {...p}><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v2"></path></Icon>;
+        const DollarSign = (p) => <Icon {...p}><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></Icon>;
+        const BarChart2 = (p) => <Icon {...p}><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></Icon>;
+        const MessageCircle = (p) => <Icon {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></Icon>;
+        const Settings = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></Icon>;
+        const Menu = (p) => <Icon {...p}><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></Icon>;
+        const X = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></Icon>;
+        const FileText = (p) => <Icon {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></Icon>;
+        const LogOut = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></Icon>;
+        const ChevronRight = (p) => <Icon {...p}><polyline points="9 18 15 12 9 6"></polyline></Icon>;
+        const User = (p) => <Icon {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></Icon>;
+        const Printer = (p) => <Icon {...p}><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></Icon>;
+        const Calendar = (p) => <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></Icon>;
+        const ChevronDown = (p) => <Icon {...p}><polyline points="6 9 12 15 18 9"></polyline></Icon>;
+        const Award = (p) => <Icon {...p}><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></Icon>;
+
+        // --- OPR (Integrated) ---
+        const OPR_LOGO_URL = "https://i.ibb.co/93ZTfY6d/LOGO-SK-KUAMUT.png";
+        const OPR_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTomQw7WQFmDuv5UiGhucVNkAwSGqYAwj6e-Jog5PL7L15ac_hN4yC0ru9to9iz6zNgBTXnM7xK0eEa/pub?gid=0&single=true&output=csv";
+        const OPR_FORM_URL = "https://www.appsheet.com/start/5bfea175-7fe5-4667-ba0c-d60aa2960a1c";
+
+        const OprSafeIcon = ({ name, size = 20, className = "" }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (iconRef.current) {
+                    iconRef.current.innerHTML = '';
+                    const iconElement = document.createElement('i');
+                    iconElement.setAttribute('data-lucide', name);
+                    iconElement.style.width = `${size}px`;
+                    iconElement.style.height = `${size}px`;
+                    if (className) iconElement.className = className;
+                    iconRef.current.appendChild(iconElement);
+                    lucide.createIcons({ root: iconRef.current });
+                }
+            }, [name, size, className]);
+            return <span ref={iconRef} className="inline-flex items-center justify-center"></span>;
+        };
+
+        const OprApp = () => {
+            const [data, setData] = useState([]);
+            const [filteredData, setFilteredData] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            const [filterSearch, setFilterSearch] = useState("");
+            const [filterCategory, setFilterCategory] = useState("Semua");
+            const [filterMonth, setFilterMonth] = useState("Semua");
+            const [filterYear, setFilterYear] = useState("Semua");
+
+            const [modalOpen, setModalOpen] = useState(false);
+            const [selectedItem, setSelectedItem] = useState(null);
+
+            const fetchData = () => {
+                setLoading(true);
+                Papa.parse(OPR_SHEET_URL, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        const processed = results.data.map((row, idx) => {
+                            const dParts = row['TARIKH'] ? row['TARIKH'].split('/') : [];
+                            let dispDate = row['TARIKH'];
+                            let monthName = "Lain-lain";
+                            let year = "N/A";
+                            let rawDate = null;
+
+                            if (dParts.length === 3) {
+                                const m = parseInt(dParts[0]);
+                                const d = parseInt(dParts[1]);
+                                const y = parseInt(dParts[2]);
+                                const months = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
+                                dispDate = `${d < 10 ? '0' + d : d}/${m < 10 ? '0' + m : m}/${y}`;
+                                monthName = months[m - 1] || "Lain-lain";
+                                year = y.toString();
+                                rawDate = new Date(y, m - 1, d);
+                            }
+
+                            const images = [row['URL FOTO 1'], row['URL FOTO 2'], row['URL FOTO 3'], row['URL FOTO 4']].filter(Boolean);
+
+                            return {
+                                id: idx,
+                                namaProgram: row['NAMA PROGRAM'],
+                                tarikh: dispDate,
+                                rawDate,
+                                bulan: monthName,
+                                tahun: year,
+                                masa: row['MASA'],
+                                tempat: row['TEMPAT'],
+                                unit: (row['UNIT'] || 'UMUM').toUpperCase(),
+                                sasaran: row['SASARAN'],
+                                objektif: row['OBJEKTIF'],
+                                aktiviti: row['AKTIVITI UTAMA'],
+                                isu: row['ISU/ MASALAH'],
+                                impak: row['IMPAK/ KEBERHASILAN'],
+                                cadangan: row['CADANGAN PENAMBAHBAIKAN'],
+                                pic: row['DISEDIAKAN OLEH'],
+                                jawatan: row['JAWATAN'],
+                                images
+                            };
+                        }).filter(i => i.namaProgram);
+
+                        processed.sort((a, b) => (b.rawDate || 0) - (a.rawDate || 0));
+                        setData(processed);
+                        setLoading(false);
+                    }
+                });
+            };
+
+            useEffect(() => { fetchData(); }, []);
+
+            useEffect(() => {
+                let temp = data.filter(item => {
+                    const matchesSearch = (item.namaProgram || "").toLowerCase().includes(filterSearch.toLowerCase()) || (item.unit || "").toLowerCase().includes(filterSearch.toLowerCase());
+                    const matchesCat = filterCategory === "Semua" || item.unit === filterCategory;
+                    const matchesMonth = filterMonth === "Semua" || item.bulan === filterMonth;
+                    const matchesYear = filterYear === "Semua" || item.tahun === filterYear;
+                    return matchesSearch && matchesCat && matchesMonth && matchesYear;
+                });
+                setFilteredData(temp);
+            }, [data, filterSearch, filterCategory, filterMonth, filterYear]);
+
+            const stats = useMemo(() => {
+                const catCounts = {};
+                filteredData.forEach(d => catCounts[d.unit] = (catCounts[d.unit] || 0) + 1);
+                return { total: filteredData.length, catCounts };
+            }, [filteredData]);
+
+            const categories = useMemo(() => ["Semua", ...new Set(data.map(d => d.unit))].sort(), [data]);
+            const years = useMemo(() => ["Semua", ...new Set(data.map(d => d.tahun))].sort().reverse(), [data]);
+            const months = ["Semua", "Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
+
+            const LABEL_STYLE = "text-xs font-bold text-slate-500 uppercase tracking-wider";
+
+            const handlePrint = (item) => {
+                const win = window.open('', '_blank');
+                const imgStyle = "width: 100%; height: 100%; object-fit: contain; display: block; margin: 0 auto;";
+
+                const imgListHtml = item.images.slice(0, 4).map(url => `
+                    <div class="image-box">
+                        <img src="${url}" style="${imgStyle}"/>
+                    </div>
+                `).join('');
+
+                win.document.write(`
+                    <html>
+                    <head>
+                        <title>Laporan OPR - ${item.namaProgram}</title>
+                        <style>
+                            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+                            * { box-sizing: border-box; }
+                            @page { size: A4; margin: 0; }
+                            html, body { width: 100%; height: 100%; margin: 0; padding: 0; background: white; }
+                            body { font-family: 'Inter', sans-serif; padding: 5mm; color: #333; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; overflow: hidden; }
+                            .print-container { width: 100%; height: 100%; display: flex; flex-direction: column; }
+                            .header-print { display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; height: 80px; }
+                            .header-print img { height: 100%; object-fit: contain; }
+                            .header-print h1 { margin: 0; color: #0c4a6e; font-size: 18px; text-transform: uppercase; line-height: 1.2; }
+                            .header-print p { margin: 0; color: #666; font-size: 11px; }
+                            .main-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 15px; flex-grow: 1; min-height: 0; overflow: hidden; }
+                            .left-col { display: flex; flex-direction: column; justify-content: space-between; height: 100%; overflow: hidden; }
+                            .info-card { border: 1px solid #e2e8f0; border-left: 4px solid #0284c7; padding: 8px; border-radius: 6px; background: #f8fafc; display: flex; flex-direction: column; justify-content: flex-start; }
+                            .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                            .label { font-weight: 700; color: #4f46e5; font-size: 9px; text-transform: uppercase; margin-bottom: 2px; }
+                            .value { font-size: 11px; line-height: 1.3; color: #1e293b; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 10; -webkit-box-orient: vertical; }
+                            .pic-box { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; flex-shrink: 0; margin-top: 10px; }
+                            .right-col { display: flex; flex-direction: column; gap: 10px; height: 100%; overflow: hidden; }
+                            .image-label { font-weight: 700; color: #4f46e5; font-size: 10px; text-transform: uppercase; flex-shrink: 0; }
+                            .images-container { flex-grow: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+                            .image-box { flex: 1; border: 1px solid #eee; border-radius: 6px; overflow: hidden; background: #fcfcfc; position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; }
+                            .no-image { border: 1px dashed #ccc; color: #999; padding: 20px; text-align: center; font-size: 11px; border-radius: 6px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="print-container">
+                            <div class="header-print">
+                                <img src="${OPR_LOGO_URL}" />
+                                <div>
+                                    <h1>SK KUAMUT</h1>
+                                    <p>PENGURUSAN SEKOLAH | SISTEM OPR DIGITAL</p>
+                                    <p style="font-weight:bold; color:#0284c7; margin-top: 2px;">Laporan Program & Aktiviti</p>
+                                </div>
+                            </div>
+                            <div class="main-grid">
+                                <div class="left-col">
+                                    <div class="info-card">
+                                        <div class="label">Nama Program</div>
+                                        <div class="value">${item.namaProgram || '-'}</div>
+                                    </div>
+                                    <div class="info-card" style="margin-top:8px;">
+                                        <div class="grid-row">
+                                            <div>
+                                                <div class="label">Tarikh</div>
+                                                <div class="value">${item.tarikh || '-'}</div>
+                                            </div>
+                                            <div>
+                                                <div class="label">Masa</div>
+                                                <div class="value">${item.masa || '-'}</div>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top:6px;">
+                                            <div class="label">Tempat</div>
+                                            <div class="value">${item.tempat || '-'}</div>
+                                        </div>
+                                    </div>
+                                    <div class="info-card" style="margin-top:8px;">
+                                        <div class="label">Objektif</div>
+                                        <div class="value">${item.objektif || '-'}</div>
+                                    </div>
+                                    <div class="info-card" style="margin-top:8px;">
+                                        <div class="label">Aktiviti Utama</div>
+                                        <div class="value">${item.aktiviti || '-'}</div>
+                                    </div>
+                                    <div class="info-card" style="margin-top:8px;">
+                                        <div class="label">Impak</div>
+                                        <div class="value">${item.impak || '-'}</div>
+                                    </div>
+                                    <div class="info-card" style="margin-top:8px;">
+                                        <div class="label">Isu / Masalah</div>
+                                        <div class="value">${item.isu || '-'}</div>
+                                    </div>
+                                    <div class="info-card" style="margin-top:8px;">
+                                        <div class="label">Cadangan Penambahbaikan</div>
+                                        <div class="value">${item.cadangan || '-'}</div>
+                                    </div>
+                                    <div class="pic-box">
+                                        <div class="label">Disediakan Oleh</div>
+                                        <div class="value">${item.pic || "Pentadbir"}</div>
+                                        ${item.jawatan ? `<div class="value" style="margin-top:4px;">${item.jawatan}</div>` : ""}
+                                    </div>
+                                </div>
+                                <div class="right-col">
+                                    <div class="image-label">Lampiran</div>
+                                    <div class="images-container">
+                                        ${item.images && item.images.length ? imgListHtml : '<div class="no-image">Tiada gambar disertakan.</div>'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+                win.document.close();
+            };
+
+            return (
+                <div className="opr-scope transition-colors duration-300">
+                    <main className="w-full max-w-7xl mx-auto">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <a
+                                href={OPR_FORM_URL}
+                                target="_blank"
+                                className="bg-brand-600 hover:bg-brand-700 text-white p-4 rounded-xl shadow-sm flex items-center justify-between transition active:scale-[0.99]"
+                            >
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-wider text-white/80">Tindakan</p>
+                                    <p className="text-xl font-black">Daftar Baru</p>
+                                </div>
+                                <div className="p-2 bg-white/15 rounded-lg text-white">
+                                    <OprSafeIcon name="plus-circle" />
+                                </div>
+                            </a>
+                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                                <div><p className={LABEL_STYLE}>Jumlah</p><p className="text-2xl font-black text-brand-600">{stats.total}</p></div>
+                                <div className="p-2 bg-brand-50 rounded-lg text-brand-600"><OprSafeIcon name="bar-chart" /></div>
+                            </div>
+                            {Object.entries(stats.catCounts).slice(0, 3).map(([cat, count]) => (
+                                <div key={cat} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                                    <div className="truncate pr-2"><p className={`${LABEL_STYLE} truncate`}>{cat}</p><p className="text-2xl font-black text-slate-700">{count}</p></div>
+                                    <div className="p-2 bg-slate-50 rounded-lg text-slate-500"><OprSafeIcon name="hash" /></div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col md:flex-row gap-4 items-center border border-slate-100">
+                            <div className="relative flex-1 w-full">
+                                <div className="absolute inset-y-0 left-3 flex items-center text-slate-400"><OprSafeIcon name="search" size={16} /></div>
+                                <input type="text" placeholder="Cari tajuk..." value={filterSearch} onChange={(e)=>setFilterSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-slate-50 rounded-xl outline-none border border-transparent focus:border-brand-500" />
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                                <select value={filterCategory} onChange={(e)=>setFilterCategory(e.target.value)} className={`px-3 py-2.5 bg-slate-50 rounded-xl outline-none ${LABEL_STYLE}`}>
+                                    {categories.map(c => <option key={c} value={c}>{c === "Semua" ? "Kategori" : c}</option>)}
+                                </select>
+                                <select value={filterMonth} onChange={(e)=>setFilterMonth(e.target.value)} className={`px-3 py-2.5 bg-slate-50 rounded-xl outline-none ${LABEL_STYLE}`}>
+                                    {months.map(m => <option key={m} value={m}>{m === "Semua" ? "Bulan" : m}</option>)}
+                                </select>
+                                <select value={filterYear} onChange={(e)=>setFilterYear(e.target.value)} className={`px-3 py-2.5 bg-slate-50 rounded-xl outline-none ${LABEL_STYLE}`}>
+                                    {years.map(y => <option key={y} value={y}>{y === "Semua" ? "Tahun" : y}</option>)}
+                                </select>
+                                <button onClick={fetchData} className="p-3 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-100 transition">
+                                    <OprSafeIcon name="rotate-cw" className={loading ? "animate-spin" : ""} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 mb-10">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-100">
+                                        <tr className={LABEL_STYLE}>
+                                            <th className="p-4">Program</th>
+                                            <th className="p-4 hidden md:table-cell">Tarikh</th>
+                                            <th className="p-4 hidden md:table-cell">Unit</th>
+                                            <th className="p-4 text-center">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {loading ? (
+                                            <tr><td colSpan="4" className="p-10 text-center"><div className="loader mx-auto mb-2"></div><p className="text-xs text-slate-400">Sedang memuat data...</p></td></tr>
+                                        ) : filteredData.map(item => (
+                                            <tr key={item.id} className="hover:bg-slate-50/50 transition">
+                                                <td className="p-4 font-bold text-slate-700 text-sm">{item.namaProgram}</td>
+                                                <td className="p-4 hidden md:table-cell text-xs text-slate-500 font-mono">{item.tarikh}</td>
+                                                <td className="p-4 hidden md:table-cell"><span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[10px] font-bold">{item.unit}</span></td>
+                                                <td className="p-4 text-center">
+                                                    <button onClick={()=>{setSelectedItem(item); setModalOpen(true);}} className="p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition text-brand-600">
+                                                        <OprSafeIcon name="eye" size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+
+                    <a href={OPR_FORM_URL} target="_blank" className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-brand-600 text-white rounded-full shadow-2xl flex items-center justify-center z-50">
+                        <OprSafeIcon name="plus" size={28} />
+                    </a>
+
+                    {modalOpen && selectedItem && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                            <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                    <div>
+                                        <div className="text-[10px] font-black text-brand-500 uppercase tracking-widest">{selectedItem.unit} - {selectedItem.tahun}</div>
+                                        <h2 className="text-xl font-black text-slate-800 uppercase">{selectedItem.namaProgram}</h2>
+                                    </div>
+                                    <button onClick={()=>setModalOpen(false)} className="text-slate-400 hover:text-red-500 transition"><OprSafeIcon name="x-circle" size={30} /></button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                    <div className="grid md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-2 space-y-6">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="p-3 bg-slate-50 rounded-xl"><span className="label text-[10px] font-bold text-slate-400 uppercase">Tarikh</span><p className="text-sm font-bold">{selectedItem.tarikh}</p></div>
+                                                <div className="p-3 bg-slate-50 rounded-xl"><span className="label text-[10px] font-bold text-slate-400 uppercase">Masa</span><p className="text-sm font-bold">{selectedItem.masa || '-'}</p></div>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl"><span className="label text-[10px] font-bold text-slate-400 uppercase">Tempat</span><p className="text-sm font-bold">{selectedItem.tempat || '-'}</p></div>
+                                            {[
+                                                {l: "Objektif", v: selectedItem.objektif, i: "target"},
+                                                {l: "Aktiviti", v: selectedItem.aktiviti, i: "activity"},
+                                                {l: "Impak", v: selectedItem.impak, i: "zap"},
+                                                {l: "Isu/Masalah", v: selectedItem.isu, i: "alert-triangle", c: "text-red-500"},
+                                                {l: "Cadangan", v: selectedItem.cadangan, i: "lightbulb", c: "text-green-500"}
+                                            ].map((s, idx) => s.v && (
+                                                <div key={idx} className="space-y-2">
+                                                    <h4 className={`text-xs font-black uppercase flex items-center gap-2 ${s.c || 'text-slate-700'}`}>
+                                                        <OprSafeIcon name={s.i} size={14}/> {s.l}
+                                                    </h4>
+                                                    <div className="p-4 bg-white border border-slate-100 rounded-xl text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                                        {s.v}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-6">
+                                            <h4 className="text-xs font-black uppercase text-slate-400 flex items-center gap-2"><OprSafeIcon name="image" size={14}/> Lampiran</h4>
+                                            <div className="grid gap-3">
+                                                {selectedItem.images.map((img, i) => (
+                                                    <a key={i} href={img} target="_blank" className="rounded-xl overflow-hidden border border-slate-100 group relative">
+                                                        <img src={img} className="w-full h-auto object-cover group-hover:scale-105 transition duration-500" />
+                                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition"><OprSafeIcon name="external-link" className="text-white" /></div>
+                                                    </a>
+                                                ))}
+                                                {selectedItem.images.length === 0 && <p className="text-center py-10 text-slate-400 text-xs italic">Tiada gambar.</p>}
+                                            </div>
+                                            <div className="p-4 bg-brand-50 rounded-2xl border border-brand-100">
+                                                <p className="text-[10px] font-black text-brand-600 uppercase">Disediakan Oleh:</p>
+                                                <p className="font-bold text-slate-800">{selectedItem.pic || "Pentadbir"}</p>
+                                                {selectedItem.jawatan && (
+                                                    <p className="text-xs text-slate-500 mt-1 uppercase font-semibold">{selectedItem.jawatan}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                                    <button onClick={()=>handlePrint(selectedItem)} className="flex items-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-black text-white rounded-xl shadow-lg transition font-bold text-sm">
+                                        <OprSafeIcon name="printer" /> Cetak PDF
+                                    </button>
+                                    <button onClick={()=>setModalOpen(false)} className="px-6 py-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition text-sm font-bold">Tutup</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const INITIAL_SCHOOL_INFO = {
+          name: "SK Kuamut Kinabatangan",
+          code: "XBA2208",
+          motto: "Berusaha, Berilmu, Berbakti",
+          phone: "03-12345678",
+          logo: { mode: "url", url: "", data: "" },
+          hmPhoto: { mode: "upload", url: "", data: "" },
+          hmName: "En. Adnan bin Mohd Hussain @ Joseph A.D.K",
+          hmMessage: "Selamat datang ke portal rasmi SK Kuamut. Kami komited untuk melahirkan modal insan yang cemerlang dari aspek intelek, rohani, emosi dan jasmani selaras dengan Falsafah Pendidikan Kebangsaan.",
+          studentsCount: 40,
+          teachersCount: 15,
+          attendanceRate: 94.5
+        };
+
+        const INITIAL_NEWS_UPDATES = [
+          { id: 1, title: "Mesyuarat PIBG Kali Ke-15", date: "25 Jan 2026", category: "Umum" },
+          { id: 2, title: "Latihan Rumah Sukan Bermula", date: "28 Jan 2026", category: "Kokurikulum" },
+          { id: 3, title: "Hantar e-RPH Minggu 4", date: "30 Jan 2026", category: "Guru" },
+        ];
+
+        const INITIAL_CALENDAR_EVENTS = [];
+
+        const INITIAL_PENTADBIRAN = [
+          { id: 1, role: "Guru Besar", name: "En. Adnan bin Mohd Hussain @ Joseph A.D.K", photoMode: "url", photoUrl: "", photoData: "" },
+          { id: 2, role: "PK Pentadbiran", name: "Nama Guru 1", photoMode: "url", photoUrl: "", photoData: "" },
+          { id: 3, role: "PK Hal Ehwal Murid", name: "Nama Guru 2", photoMode: "url", photoUrl: "", photoData: "" },
+          { id: 4, role: "PK Kokurikulum", name: "Nama Guru 3", photoMode: "url", photoUrl: "", photoData: "" },
+        ];
+
+        const INITIAL_GURU_LIST = [
+          "Guru Besar",
+          "PK Pentadbiran",
+          "PK HEM",
+          "PK Kokurikulum",
+          "Guru Mata Pelajaran"
+        ];
+
+        const INITIAL_KELAS_LIST = [
+          "Tahun 1",
+          "Tahun 2",
+          "Tahun 3",
+          "Tahun 4",
+          "Tahun 5",
+          "Tahun 6"
+        ];
+
+        const INITIAL_BACKGROUND = {
+          mode: "url",
+          url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2000&auto=format&fit=crop",
+          data: ""
+        };
+
+        const QUICK_LINKS = [
+          { id: 1, label: "e-RPH", icon: <BookOpen className="w-6 h-6" />, path: "erph", url: "https://redpen.com.my" }, 
+          { id: 2, label: "Kehadiran", icon: <UserCheck className="w-6 h-6" />, path: "hem" },
+          { id: 3, label: "OPR Report", icon: <FileText className="w-6 h-6" />, path: "laporan" },
+          { id: 4, label: "Borang", icon: <FolderOpen className="w-6 h-6" />, path: "dokumen" },
+        ];
+
+        const Card = ({ children, className = "" }) => (
+          <div className={`bg-white/95 backdrop-blur-sm p-6 rounded-lg shadow-[0_4px_12px_rgb(0,0,0,0.05)] border border-slate-200/60 ${className}`}>
+            {children}
+          </div>
+        );
+
+        const SectionHeader = ({ title, subtitle }) => (
+          <div className="mb-6 pb-4 border-b border-slate-200/60 bg-white/50 backdrop-blur-sm p-4 rounded-lg">
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{title}</h2>
+            {subtitle && <p className="text-slate-500 mt-1 text-sm uppercase tracking-wider">{subtitle}</p>}
+          </div>
+        );
+
+        // Komponen baru: Grid titik yang menyala secara rawak
+        const TwinklingGrid = () => {
+            // Kurangkan jumlah dot supaya tak terlalu semak di kawasan kecil
+            const dots = Array.from({ length: 30 }).map((_, i) => {
+                
+                // Warna-warna cerah untuk nampak atas background gelap
+                const colors = ['bg-sky-300', 'bg-indigo-300', 'bg-white', 'bg-teal-300', 'bg-purple-300'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                return {
+                    id: i,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    color: randomColor,
+                    delay: `${Math.random() * 5}s`,
+                    duration: `${1 + Math.random() * 2}s`
+                };
+            });
+
+            return (
+                <div className="absolute inset-0 overflow-hidden pointer-events-none z-10 rounded-b-xl">
+                    {dots.map(dot => (
+                        <div 
+                            key={dot.id}
+                            className={`absolute rounded-full ${dot.color} shadow-[0_0_4px_1px_rgba(255,255,255,0.8)]`}
+                            style={{
+                                left: dot.left,
+                                top: dot.top,
+                                width: '3px',
+                                height: '3px',
+                                opacity: 0,
+                                animation: `active-dot ${dot.duration} infinite ease-in-out ${dot.delay}`
+                            }}
+                        />
+                    ))}
+                </div>
+            );
+        };
+
+        const loadLocal = (key, fallback) => {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            const parsed = JSON.parse(raw);
+            return parsed ?? fallback;
+          } catch (err) {
+            return fallback;
+          }
+        };
+
+        const saveLocal = (key, value) => {
+          try {
+            localStorage.setItem(key, JSON.stringify(value));
+          } catch (err) {
+            // Ignore storage errors (e.g., privacy mode)
+          }
+        };
+
+        const loadGoogleCharts = () => {
+          return new Promise((resolve, reject) => {
+            if (window.google && window.google.charts) {
+              resolve();
+              return;
+            }
+            const existing = document.querySelector('script[data-google-charts="true"]');
+            if (existing) {
+              existing.addEventListener("load", resolve);
+              existing.addEventListener("error", reject);
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = "https://www.gstatic.com/charts/loader.js";
+            script.async = true;
+            script.dataset.googleCharts = "true";
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+        };
+
+        const EnrolmenChart = ({ sheetId, sheetName, query, containerId, chartType = "PieChart", priorityLabel }) => {
+          const [chartError, setChartError] = useState("");
+
+          useEffect(() => {
+            let cancelled = false;
+
+            const drawChart = () => {
+              if (cancelled) return;
+              const container = document.getElementById(containerId);
+              if (!container || !(window.google && window.google.charts)) return;
+
+              window.google.charts.load("current", { packages: ["corechart"] });
+              window.google.charts.setOnLoadCallback(() => {
+                const queryUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${encodeURIComponent(sheetName || "")}&tq=${encodeURIComponent(query)}`;
+                const dataQuery = new window.google.visualization.Query(queryUrl);
+                dataQuery.send((response) => {
+                  if (response.isError()) {
+                    setChartError("Tidak dapat akses data dari Google Sheet.");
+                    return;
+                  }
+                  let data = response.getDataTable();
+                  if (!data || data.getNumberOfColumns() < 2 || data.getNumberOfRows() === 0) {
+                    setChartError("Data tidak mencukupi untuk paparan carta.");
+                    return;
+                  }
+                  if (priorityLabel && chartType === "PieChart") {
+                    const rows = [];
+                    for (let i = 0; i < data.getNumberOfRows(); i += 1) {
+                      rows.push([data.getValue(i, 0), data.getValue(i, 1)]);
+                    }
+                    const normalizedPriority = String(priorityLabel).toLowerCase();
+                    const priorityRows = rows.filter(
+                      (row) => String(row[0]).toLowerCase() === normalizedPriority
+                    );
+                    const otherRows = rows.filter(
+                      (row) => String(row[0]).toLowerCase() !== normalizedPriority
+                    );
+                    const table = [["Label", "Bilangan"], ...priorityRows, ...otherRows];
+                    data = window.google.visualization.arrayToDataTable(table);
+                  }
+                  const options = {
+                    legend: { position: "bottom" },
+                    height: 360,
+                    colors: ["#0ea5e9", "#6366f1", "#f97316", "#14b8a6"],
+                    chartArea: { left: "5%", top: 20, width: "90%", height: "75%" },
+                    backgroundColor: "transparent",
+                  };
+                  const ChartCtor =
+                    chartType === "ColumnChart"
+                      ? window.google.visualization.ColumnChart
+                      : window.google.visualization.PieChart;
+                  const chart = new ChartCtor(container);
+                  chart.draw(data, options);
+                });
+              });
+            };
+
+            loadGoogleCharts()
+              .then(() => {
+                if (!cancelled) drawChart();
+              })
+              .catch(() => {
+                if (!cancelled) setChartError("Gagal memuat perpustakaan carta Google.");
+              });
+
+            const onResize = () => drawChart();
+            window.addEventListener("resize", onResize);
+            return () => {
+              cancelled = true;
+              window.removeEventListener("resize", onResize);
+            };
+          }, [sheetId, sheetName, query, containerId, chartType, priorityLabel]);
+
+          return (
+            <div className="w-full">
+              <div className="w-full chart-center">
+                <div
+                  id={containerId}
+                  className="chart-hover"
+                  style={{ minHeight: "360px", width: "420px", maxWidth: "100%" }}
+                ></div>
+              </div>
+              {chartError && (
+                <p className="text-xs text-rose-500 mt-3">{chartError}</p>
+              )}
+            </div>
+          );
+        };
+
+        function App() {
+          const ADMIN_USERNAME = "admin";
+          const ADMIN_PASSWORD = "admin123";
+          const SHEET_ID = "1CTW31-X7CLGsQhgbbhkitaRbCavB60XPwgcbqOs9L-8";
+          const SHEET_CSV_URL_GURU = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+          const SHEET_CSV_URL_KELAS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=KELAS`;
+          const DRIVE_FILE_URL = (fileId) => `https://drive.google.com/file/d/${fileId}/view`;
+          const DRIVE_IMAGE_URL = (fileId) => `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+          const DRIVE_IMAGE_ORIGINAL_URL = (fileId) => `https://drive.google.com/uc?export=view&id=${fileId}`;
+          const [activeTab, setActiveTab] = useState('home');
+          const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+          const [currentTime, setCurrentTime] = useState(new Date());
+          const [expandedMenus, setExpandedMenus] = useState({});
+          const [schoolInfo, setSchoolInfo] = useState(() => loadLocal('schoolInfo', INITIAL_SCHOOL_INFO));
+          const [newsUpdates, setNewsUpdates] = useState(() => loadLocal('newsUpdates', INITIAL_NEWS_UPDATES));
+          const [draftSchoolInfo, setDraftSchoolInfo] = useState(() => loadLocal('schoolInfo', INITIAL_SCHOOL_INFO));
+          const [draftNewsUpdates, setDraftNewsUpdates] = useState(() => loadLocal('newsUpdates', INITIAL_NEWS_UPDATES));
+          const [saveStatus, setSaveStatus] = useState("");
+          const [pentadbiran, setPentadbiran] = useState(() => loadLocal('pentadbiran', INITIAL_PENTADBIRAN));
+          const [draftPentadbiran, setDraftPentadbiran] = useState(() => loadLocal('pentadbiran', INITIAL_PENTADBIRAN));
+          const [pentadbiranStatus, setPentadbiranStatus] = useState("");
+          const [isAdmin, setIsAdmin] = useState(() => loadLocal('isAdmin', false));
+          const [showLogin, setShowLogin] = useState(false);
+          const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+          const [loginError, setLoginError] = useState("");
+          const [guruList, setGuruList] = useState(() => loadLocal('guruList', INITIAL_GURU_LIST));
+          const [kelasList, setKelasList] = useState(() => loadLocal('kelasList', INITIAL_KELAS_LIST));
+          const [draftGuruList, setDraftGuruList] = useState(() => loadLocal('guruList', INITIAL_GURU_LIST));
+          const [draftKelasList, setDraftKelasList] = useState(() => loadLocal('kelasList', INITIAL_KELAS_LIST));
+          const [jadualStatus, setJadualStatus] = useState("");
+          const [selectedTeacher, setSelectedTeacher] = useState("");
+          const [teacherPdfMap, setTeacherPdfMap] = useState({});
+          const [teacherPdfError, setTeacherPdfError] = useState("");
+          const [selectedTeacherImage, setSelectedTeacherImage] = useState("");
+          const [teacherImageMode, setTeacherImageMode] = useState("thumb");
+          const [teacherImageError, setTeacherImageError] = useState("");
+          const [selectedClass, setSelectedClass] = useState("");
+          const [classPdfMap, setClassPdfMap] = useState({});
+          const [classPdfError, setClassPdfError] = useState("");
+          const [selectedClassImage, setSelectedClassImage] = useState("");
+          const [classImageMode, setClassImageMode] = useState("thumb");
+          const [classImageError, setClassImageError] = useState("");
+          const [jadualTab, setJadualTab] = useState("guru");
+          const [background, setBackground] = useState(() => loadLocal('background', INITIAL_BACKGROUND));
+          const [draftBackground, setDraftBackground] = useState(() => loadLocal('background', INITIAL_BACKGROUND));
+          const [backgroundStatus, setBackgroundStatus] = useState("");
+          const [calendarEvents, setCalendarEvents] = useState(() => loadLocal('calendarEvents', INITIAL_CALENDAR_EVENTS));
+          const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+          const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+          const [selectedDate, setSelectedDate] = useState(() => {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}`;
+          });
+          const [calendarForm, setCalendarForm] = useState({ title: "", category: "Program" });
+          const [calendarStatus, setCalendarStatus] = useState("");
+          const [showAllAgenda, setShowAllAgenda] = useState(false);
+          const ENROL_SHEET_ID = "1d8711SXP0faIbyrqQueBvrjYQJhKn2YSNCOGvyMebQM";
+          const [hmCropOpen, setHmCropOpen] = useState(false);
+          const [hmCropImage, setHmCropImage] = useState("");
+          const [hmCropZoom, setHmCropZoom] = useState(1);
+          const hmCropperRef = useRef(null);
+
+          useEffect(() => {
+            const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+            return () => clearInterval(timer);
+          }, []);
+
+          useEffect(() => {
+            const parseCsvLine = (line) => {
+              const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+              return parts.map((p) => p.replace(/^"|"$/g, "").trim());
+            };
+
+            const normalizeHeader = (h) => h.toLowerCase().replace(/\s+/g, " ").trim();
+
+            const loadTeacherPdfMap = async () => {
+              try {
+                const res = await fetch(SHEET_CSV_URL_GURU);
+                if (!res.ok) throw new Error("Gagal muat turun data");
+                const csv = await res.text();
+                const lines = csv.split(/\r?\n/).filter(Boolean);
+                if (lines.length < 2) return;
+                const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+                const nameIdx = headers.indexOf("nama");
+                const idIdx = headers.indexOf("id");
+                if (nameIdx === -1 || idIdx === -1) {
+                  setTeacherPdfError("Kolum 'NAMA' atau 'ID' tidak dijumpai.");
+                  return;
+                }
+                const map = {};
+                for (let i = 1; i < lines.length; i += 1) {
+                  const row = parseCsvLine(lines[i]);
+                  const name = row[nameIdx]?.trim();
+                  const id = row[idIdx]?.trim();
+                  if (name && id) {
+                    map[name] = id;
+                  }
+                }
+                setTeacherPdfMap(map);
+                setTeacherPdfError("");
+              } catch (err) {
+                setTeacherPdfError("Tidak dapat akses data PDF guru.");
+              }
+            };
+
+            const loadClassPdfMap = async () => {
+              try {
+                const res = await fetch(SHEET_CSV_URL_KELAS);
+                if (!res.ok) throw new Error("Gagal muat turun data");
+                const csv = await res.text();
+                const lines = csv.split(/\r?\n/).filter(Boolean);
+                if (lines.length < 2) return;
+                const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+                const kelasIdx = headers.indexOf("kelas");
+                const idKelasIdx = headers.indexOf("id kelas");
+                if (kelasIdx === -1 || idKelasIdx === -1) {
+                  setClassPdfError("Kolum 'KELAS' atau 'ID KELAS' tidak dijumpai.");
+                  return;
+                }
+                const map = {};
+                for (let i = 1; i < lines.length; i += 1) {
+                  const row = parseCsvLine(lines[i]);
+                  const name = row[kelasIdx]?.trim();
+                  const id = row[idKelasIdx]?.trim();
+                  if (name && id) {
+                    map[name] = id;
+                  }
+                }
+                setClassPdfMap(map);
+                setClassPdfError("");
+              } catch (err) {
+                setClassPdfError("Tidak dapat akses data PDF kelas.");
+              }
+            };
+
+            loadTeacherPdfMap();
+            loadClassPdfMap();
+          }, [SHEET_CSV_URL_GURU, SHEET_CSV_URL_KELAS]);
+
+          const toggleMenu = (menuId) => {
+            setExpandedMenus(prev => ({
+                ...prev,
+                [menuId]: !prev[menuId]
+            }));
+          };
+
+          const navItems = [
+            { id: 'home', label: 'Laman Utama', icon: <Home size={18} />, color: 'text-blue-500' },
+            { id: 'profil', label: 'Profil Sekolah', icon: <School size={18} />, color: 'text-emerald-500' },
+            { id: 'pentadbiran', label: 'Pentadbiran', icon: <Users size={18} />, color: 'text-violet-500' },
+            { 
+                id: 'akademik', 
+                label: 'Akademik', 
+                icon: <BookOpen size={18} />, 
+                color: 'text-amber-500',
+                subItems: [
+                    { id: 'jawatankuasa', label: 'Jawatankuasa' },
+                    { id: 'jadual-waktu', label: 'Jadual Waktu' },
+                    { id: 'erph', label: 'eRPH Guru', url: 'https://redpen.com.my' },
+                    { id: 'pbd', label: 'PBD' },
+                    { id: 'analisis-uasa', label: 'UASA' }
+                ]
+            },
+            { 
+                id: 'hem', 
+                label: 'Hal Ehwal Murid', 
+                icon: <UserCheck size={18} />, 
+                color: 'text-rose-500',
+                subItems: [
+                    { id: 'hem-jawatankuasa', label: 'Jawatankuasa' },
+                    { id: 'hem-analisis', label: 'Analisis Murid' },
+                    { id: 'hem-kehadiran', label: 'Kehadiran Murid' }
+                ]
+            },
+            { 
+                id: 'koko', 
+                label: 'Kokurikulum', 
+                icon: <Activity size={18} />, 
+                color: 'text-cyan-500',
+                subItems: [
+                    { id: 'koko-jawatankuasa', label: 'Jawatankuasa' },
+                    { id: 'koko-analisis', label: 'Analisis Unit' },
+                    { id: 'koko-kehadiran', label: 'Kehadiran Unit' }
+                ]
+            },
+            { id: 'dokumen', label: 'Dokumen & Fail', icon: <FolderOpen size={18} />, color: 'text-lime-500' },
+            { id: 'pencapaian', label: 'Pencapaian Sekolah', icon: <Award size={18} />, color: 'text-teal-500' },
+            { id: 'laporan', label: 'Laporan & Analitik', icon: <BarChart2 size={18} />, color: 'text-fuchsia-500' },
+            { id: 'komunikasi', label: 'Komunikasi', icon: <MessageCircle size={18} />, color: 'text-orange-500' },
+            { id: 'kemaskini', label: 'Kemaskini Data', icon: <FileText size={18} />, color: 'text-sky-600' },
+            { id: 'sistem', label: 'Sistem', icon: <Settings size={18} />, color: 'text-slate-500' },
+          ];
+
+          const resetDrafts = () => {
+            setDraftSchoolInfo(schoolInfo);
+            setDraftNewsUpdates(newsUpdates);
+            setSaveStatus("");
+          };
+
+          const handleSave = () => {
+            setSchoolInfo(draftSchoolInfo);
+            setNewsUpdates(draftNewsUpdates);
+            saveLocal('schoolInfo', draftSchoolInfo);
+            saveLocal('newsUpdates', draftNewsUpdates);
+            setSaveStatus("Disimpan pada " + new Date().toLocaleTimeString('ms-MY'));
+          };
+
+          const resetPentadbiran = () => {
+            setDraftPentadbiran(pentadbiran);
+            setPentadbiranStatus("");
+          };
+
+          const savePentadbiran = () => {
+            setPentadbiran(draftPentadbiran);
+            saveLocal('pentadbiran', draftPentadbiran);
+            setPentadbiranStatus("Disimpan pada " + new Date().toLocaleTimeString('ms-MY'));
+          };
+
+          const addPentadbiran = () => {
+            setDraftPentadbiran(prev => ([
+              ...prev,
+              { id: Date.now(), role: "Jawatan", name: "Nama", photoMode: "url", photoUrl: "", photoData: "" }
+            ]));
+          };
+
+          const updatePentadbiran = (index, field, value) => {
+            setDraftPentadbiran(prev => {
+              const updated = [...prev];
+              updated[index] = { ...updated[index], [field]: value };
+              return updated;
+            });
+          };
+
+          const handlePentadbiranUpload = (index, file) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = typeof reader.result === "string" ? reader.result : "";
+              setDraftPentadbiran(prev => {
+                const updated = [...prev];
+                updated[index] = {
+                  ...updated[index],
+                  photoData: result,
+                  photoMode: "upload",
+                };
+                return updated;
+              });
+            };
+            reader.readAsDataURL(file);
+          };
+
+          const removePentadbiran = (index) => {
+            setDraftPentadbiran(prev => prev.filter((_, i) => i !== index));
+          };
+
+          const openAdmin = () => {
+            if (isAdmin) return;
+            setShowLogin(true);
+            setLoginError("");
+          };
+
+          const handleLogin = (e) => {
+            e.preventDefault();
+            if (loginForm.username === ADMIN_USERNAME && loginForm.password === ADMIN_PASSWORD) {
+              setIsAdmin(true);
+              saveLocal('isAdmin', true);
+              setShowLogin(false);
+              setLoginForm({ username: "", password: "" });
+              setLoginError("");
+              return;
+            }
+            setLoginError("ID atau kata laluan tidak sah.");
+          };
+
+          const handleLogout = () => {
+            setIsAdmin(false);
+            saveLocal('isAdmin', false);
+          };
+
+          const resetJadualOptions = () => {
+            setDraftGuruList(guruList);
+            setDraftKelasList(kelasList);
+            setJadualStatus("");
+          };
+
+          const saveJadualOptions = () => {
+            setGuruList(draftGuruList);
+            setKelasList(draftKelasList);
+            saveLocal('guruList', draftGuruList);
+            saveLocal('kelasList', draftKelasList);
+            setJadualStatus("Disimpan pada " + new Date().toLocaleTimeString('ms-MY'));
+          };
+
+          const handleSaveAll = () => {
+            handleSave();
+            saveJadualOptions();
+          };
+
+          const updateListItem = (setter, list, index, value) => {
+            const updated = [...list];
+            updated[index] = value;
+            setter(updated);
+          };
+
+          const addListItem = (setter, list, value) => {
+            setter([...list, value]);
+          };
+
+          const removeListItem = (setter, list, index) => {
+            setter(list.filter((_, i) => i !== index));
+          };
+
+          const resetBackground = () => {
+            setDraftBackground(background);
+            setBackgroundStatus("");
+          };
+
+          const saveBackground = () => {
+            setBackground(draftBackground);
+            saveLocal('background', draftBackground);
+            setBackgroundStatus("Disimpan pada " + new Date().toLocaleTimeString('ms-MY'));
+          };
+
+          const handleBackgroundUpload = (file) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = typeof reader.result === "string" ? reader.result : "";
+              setDraftBackground(prev => ({
+                ...prev,
+                data: result,
+                mode: "upload"
+              }));
+            };
+            reader.readAsDataURL(file);
+          };
+
+          const handleLogoUpload = (file) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = typeof reader.result === "string" ? reader.result : "";
+              setDraftSchoolInfo(prev => ({
+                ...prev,
+                logo: {
+                  ...(prev.logo || { mode: "upload", url: "", data: "" }),
+                  data: result,
+                  mode: "upload"
+                }
+              }));
+            };
+            reader.readAsDataURL(file);
+          };
+
+          const handleHmPhotoUpload = (file) => {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              const result = typeof reader.result === "string" ? reader.result : "";
+              setHmCropImage(result);
+              setHmCropZoom(1);
+              setHmCropOpen(true);
+            };
+            reader.readAsDataURL(file);
+          };
+
+          const saveCalendarEvents = (events) => {
+            setCalendarEvents(events);
+            saveLocal('calendarEvents', events);
+          };
+
+          const syncViewToDate = (dateKey) => {
+            if (!dateKey) return;
+            const parts = dateKey.split("-").map(Number);
+            if (parts.length !== 3 || Number.isNaN(parts[0])) return;
+            const [y, m] = parts;
+            setViewYear(y);
+            setViewMonth(m - 1);
+          };
+
+          const addCalendarEvent = () => {
+            if (!selectedDate) {
+              setCalendarStatus("Sila pilih tarikh dahulu.");
+              return;
+            }
+            if (!calendarForm.title.trim()) {
+              setCalendarStatus("Sila masukkan nama program.");
+              return;
+            }
+            const newEvent = {
+              id: Date.now(),
+              date: selectedDate,
+              title: calendarForm.title.trim(),
+              category: calendarForm.category.trim() || "Program",
+            };
+            saveCalendarEvents([...calendarEvents, newEvent]);
+            setCalendarForm({ title: "", category: "Program" });
+            setCalendarStatus("Program berjaya ditambah.");
+          };
+
+          const removeCalendarEvent = (id) => {
+            const updated = calendarEvents.filter(ev => ev.id !== id);
+            saveCalendarEvents(updated);
+            setCalendarStatus("Program dibuang.");
+          };
+
+          const shiftMonth = (delta) => {
+            const nextMonth = viewMonth + delta;
+            const nextDate = new Date(viewYear, nextMonth, 1);
+            setViewYear(nextDate.getFullYear());
+            setViewMonth(nextDate.getMonth());
+          };
+
+          const jumpToToday = () => {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            setViewYear(yyyy);
+            setViewMonth(d.getMonth());
+            setSelectedDate(`${yyyy}-${mm}-${dd}`);
+            setCalendarStatus("");
+          };
+
+          const exportCalendarEvents = () => {
+            if (!calendarEvents.length) {
+              setCalendarStatus("Tiada program untuk dieksport.");
+              return;
+            }
+            const header = ["Tarikh", "Kategori", "Program"];
+            const rows = calendarEvents
+              .slice()
+              .sort((a, b) => a.date.localeCompare(b.date))
+              .map((ev) => [ev.date, ev.category || "Program", ev.title || ""]);
+            const csv = [header, ...rows]
+              .map((row) =>
+                row
+                  .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+                  .join(",")
+              )
+              .join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "kalendar-sekolah.csv";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            setCalendarStatus("Fail eksport telah dimuat turun.");
+          };
+
+          useEffect(() => {
+            if (!hmCropOpen || !hmCropImage) return;
+            if (!window.Cropper) return;
+            const img = document.getElementById("hm-crop-image");
+            if (!img) return;
+            if (hmCropperRef.current) {
+              hmCropperRef.current.destroy();
+              hmCropperRef.current = null;
+            }
+            hmCropperRef.current = new window.Cropper(img, {
+              aspectRatio: 3 / 4,
+              viewMode: 1,
+              autoCropArea: 1,
+              background: false,
+              movable: true,
+              zoomable: true,
+              scalable: false,
+              rotatable: false,
+            });
+            return () => {
+              if (hmCropperRef.current) {
+                hmCropperRef.current.destroy();
+                hmCropperRef.current = null;
+              }
+            };
+          }, [hmCropOpen, hmCropImage]);
+
+          const applyHmCrop = () => {
+            if (!hmCropperRef.current) return;
+            const canvas = hmCropperRef.current.getCroppedCanvas({
+              width: 360,
+              height: 480,
+              imageSmoothingEnabled: true,
+              imageSmoothingQuality: "high",
+            });
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+            setDraftSchoolInfo(prev => ({
+              ...prev,
+              hmPhoto: {
+                ...(prev.hmPhoto || { mode: "upload", url: "", data: "" }),
+                data: dataUrl,
+                mode: "upload"
+              }
+            }));
+            setHmCropOpen(false);
+          };
+
+          const cancelHmCrop = () => {
+            setHmCropOpen(false);
+          };
+          
+          
+
+          const renderContent = () => {
+            switch (activeTab) {
+              case 'home':
+                const year = viewYear;
+                const month = viewMonth;
+                const monthName = new Date(year, month, 1).toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' });
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDay = new Date(year, month, 1).getDay();
+                const todayDate = new Date();
+                const todayKey = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, "0")}-${String(todayDate.getDate()).padStart(2, "0")}`;
+                const today = todayDate.getDate();
+                const eventsForSelectedDate = calendarEvents.filter(ev => ev.date === selectedDate);
+                const formatSelectedDate = (dateKey) => {
+                  if (!dateKey) return "";
+                  const [y, m, d] = dateKey.split("-").map(Number);
+                  const dt = new Date(y, m - 1, d);
+                  return dt.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+                };
+                const upcomingEvents = calendarEvents
+                  .filter(ev => ev.date >= todayKey)
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .slice(0, 5);
+
+                return (
+                  <div className="space-y-6 animate-fade-in">
+                    {/* Hero */}
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="bg-white rounded-lg p-8 text-slate-800 relative overflow-hidden shadow-lg border border-slate-200">
+                        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
+                        <div className="w-44 h-64 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                            {schoolInfo.hmPhoto && (schoolInfo.hmPhoto.mode === "upload" ? schoolInfo.hmPhoto.data : schoolInfo.hmPhoto.url) ? (
+                              <img
+                                src={schoolInfo.hmPhoto.mode === "upload" ? schoolInfo.hmPhoto.data : schoolInfo.hmPhoto.url}
+                                alt="Guru Besar"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User size={40} className="text-blue-600" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="inline-block px-3 py-1 bg-slate-100 border border-slate-200 rounded text-xs font-semibold mb-3 tracking-wide text-slate-600">ALUAN GURU BESAR</div>
+                            <h2 className="text-3xl font-bold mb-3 tracking-tight text-slate-900">{schoolInfo.motto}</h2>
+                            <p className="text-sm leading-relaxed text-slate-600 max-w-xl text-justify">
+                              {schoolInfo.hmMessage}
+                            </p>
+                            <div className="mt-6 border-t border-slate-100 pt-4 flex flex-col">
+                              <span className="font-bold text-lg text-slate-800">{schoolInfo.hmName}</span>
+                              <span className="text-xs text-slate-500 uppercase tracking-widest">Guru Besar</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="absolute right-0 bottom-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl translate-y-1/2 translate-x-1/4"></div>
+                      </div>
+                    </div>
+
+                    {/* Butang Capaian Pantas */}
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800 mb-4 px-1 bg-white/50 backdrop-blur-sm inline-block rounded p-1">Pautan Pantas</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {QUICK_LINKS.map(link => (
+                          <button 
+                            key={link.id} 
+                            onClick={() => {
+                              if (link.url) {
+                                window.open(link.url, "_blank", "noopener,noreferrer");
+                                return;
+                              }
+                              setActiveTab(link.path);
+                            }}
+                            className="flex flex-col items-center justify-center p-6 bg-white/90 backdrop-blur-sm rounded-lg border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all group"
+                          >
+                            <div className="mb-4 text-slate-400 group-hover:text-blue-600 transition-colors">
+                              {link.icon}
+                            </div>
+                            <span className="text-sm font-semibold text-slate-600 group-hover:text-slate-900">{link.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Berita & Statistik */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center">
+                            <MessageCircle className="w-5 h-5 mr-3 text-slate-400" />
+                            Papan Kenyataan
+                          </h3>
+                          <button className="text-xs text-blue-600 font-semibold hover:text-blue-800 uppercase tracking-wider border border-blue-200 px-3 py-1 rounded hover:bg-blue-50 transition">Lihat Semua</button>
+                        </div>
+                        <div className="space-y-0 divide-y divide-slate-100">
+                          {newsUpdates.map(news => (
+                            <div key={news.id} className="flex items-start space-x-4 py-4 hover:bg-slate-50 transition-colors cursor-pointer first:pt-0 last:pb-0">
+                              <div className="text-center min-w-[3.5rem] border border-slate-200 rounded p-1 bg-slate-50">
+                                <div className="text-xs font-bold text-slate-800">{news.date.split(" ")[0]}</div>
+                                <div className="text-[10px] text-slate-500 uppercase">{news.date.split(" ")[1]}</div>
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-slate-800 leading-snug">{news.title}</h4>
+                                <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded mt-1.5 inline-block uppercase tracking-wide">{news.category}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+
+                      <Card>
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center">
+                              <Calendar className="w-5 h-5 mr-3 text-slate-400" />
+                              Kalendar Sekolah
+                            </h3>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => shiftMonth(-1)}
+                                className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 border border-slate-200 rounded"
+                              >
+                                <span className="text-lg leading-none">‹</span>
+                              </button>
+                              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded capitalize">{monthName}</span>
+                              <button
+                                onClick={() => shiftMonth(1)}
+                                className="px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-800 border border-slate-200 rounded"
+                              >
+                                <span className="text-lg leading-none">›</span>
+                              </button>
+                              <button
+                                onClick={jumpToToday}
+                                className="px-2 py-1 text-xs font-semibold text-blue-600 hover:text-blue-800 border border-blue-200 rounded bg-blue-50"
+                              >
+                                Hari Ini
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="w-full">
+                              <div className="grid grid-cols-7 gap-1 mb-2">
+                                  {['A', 'I', 'S', 'R', 'K', 'J', 'S'].map((day, i) => (
+                                      <div key={i} className="text-center text-xs font-bold text-slate-400 py-1">
+                                          {day}
+                                      </div>
+                                  ))}
+                              </div>
+                              <div className="grid grid-cols-7 gap-1">
+                                  {Array.from({ length: 42 }).map((_, i) => {
+                                      const dayNum = i - firstDay + 1;
+                                      const isCurrentMonth = dayNum > 0 && dayNum <= daysInMonth;
+                                      const dayKey = isCurrentMonth
+                                        ? `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`
+                                        : "";
+                                      const isToday = dayKey === todayKey;
+                                      const hasEvent = dayKey
+                                        ? calendarEvents.some(ev => ev.date === dayKey)
+                                        : false;
+                                      const isSelected = dayKey && dayKey === selectedDate;
+                                      
+                                      return (
+                                          <div 
+                                            key={i} 
+                                            className={`
+                                                aspect-square flex items-center justify-center text-sm rounded-md transition-colors relative
+                                                ${isCurrentMonth ? 'hover:bg-blue-50 cursor-pointer text-slate-700' : 'text-transparent pointer-events-none'}
+                                                ${isToday ? 'bg-blue-600 text-white font-bold shadow-md hover:bg-blue-700' : ''}
+                                                ${isSelected ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-white' : ''}
+                                            `}
+                                            onClick={() => {
+                                              if (!isCurrentMonth) return;
+                                              setSelectedDate(dayKey);
+                                              syncViewToDate(dayKey);
+                                              setCalendarStatus("");
+                                            }}
+                                          >
+                                              {isCurrentMonth ? dayNum : ''}
+                                              {hasEvent && (
+                                                <span className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-500'}`}></span>
+                                              )}
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-500">
+                                  <div className="flex items-center gap-1">
+                                      <div className="w-2 h-2 bg-blue-600 rounded-full"></div> Hari Ini
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div> Ada Program
+                                  </div>
+                              </div>
+
+                              <div className="mt-5 pt-4 border-t border-slate-100">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="text-sm font-bold text-slate-700">Program / Takwim</h4>
+                                  <span className="text-xs text-slate-500">{formatSelectedDate(selectedDate)}</span>
+                                </div>
+
+                                {eventsForSelectedDate.length === 0 ? (
+                                  <p className="text-xs text-slate-400">Tiada program untuk tarikh ini.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {eventsForSelectedDate.map(ev => (
+                                      <div key={ev.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded px-3 py-2 text-xs">
+                                        <div className="flex items-center gap-2">
+                                          <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-semibold uppercase tracking-wide">{ev.category}</span>
+                                          <span className="text-slate-700 font-medium">{ev.title}</span>
+                                        </div>
+                                        {isAdmin && (
+                                          <button
+                                            onClick={() => removeCalendarEvent(ev.id)}
+                                            className="text-rose-500 hover:text-rose-700 font-semibold"
+                                          >
+                                            Buang
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {isAdmin ? (
+                                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                                    <label className="text-xs font-semibold text-slate-600">
+                                      Tarikh
+                                      <input
+                                        type="date"
+                                        value={selectedDate}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          setSelectedDate(value);
+                                          syncViewToDate(value);
+                                          setCalendarStatus("");
+                                        }}
+                                        className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                      />
+                                    </label>
+                                    <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                      Nama Program
+                                      <input
+                                        type="text"
+                                        value={calendarForm.title}
+                                        onChange={(e) => setCalendarForm({ ...calendarForm, title: e.target.value })}
+                                        className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                        placeholder="Contoh: Mesyuarat PIBG"
+                                      />
+                                    </label>
+                                    <label className="text-xs font-semibold text-slate-600">
+                                      Kategori
+                                      <input
+                                        type="text"
+                                        value={calendarForm.category}
+                                        onChange={(e) => setCalendarForm({ ...calendarForm, category: e.target.value })}
+                                        className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                        placeholder="Program"
+                                      />
+                                    </label>
+                                    <div className="md:col-span-3 flex items-center justify-between">
+                                      <button
+                                        onClick={addCalendarEvent}
+                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition"
+                                      >
+                                        Tambah Program
+                                      </button>
+                                      <span className="text-[11px] text-slate-500">{calendarStatus}</span>
+                                    </div>
+                                    <p className="md:col-span-3 text-[11px] text-slate-400">
+                                      Tip: Pilih tarikh dari input di atas untuk tambah program bulan lain.
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-slate-400 mt-4">Log masuk sebagai admin untuk tambah program.</p>
+                                )}
+                              </div>
+
+                              <div className="mt-5 pt-4 border-t border-slate-100">
+                                <h4 className="text-sm font-bold text-slate-700 mb-3">Program Akan Datang</h4>
+                                {upcomingEvents.length === 0 ? (
+                                  <p className="text-xs text-slate-400">Tiada program akan datang.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {upcomingEvents.map(ev => (
+                                      <div key={`up-${ev.id}`} className="flex items-center justify-between bg-white border border-slate-100 rounded px-3 py-2 text-xs">
+                                        <div className="flex items-center gap-2">
+                                          <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold uppercase tracking-wide">{ev.category}</span>
+                                          <span className="text-slate-700 font-medium">{ev.title}</span>
+                                        </div>
+                                        <span className="text-slate-400">{formatSelectedDate(ev.date)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="mt-4 flex flex-wrap items-center gap-2">
+                                <button
+                                  onClick={() => setShowAllAgenda((prev) => !prev)}
+                                  className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded bg-white"
+                                >
+                                  {showAllAgenda ? "Tutup Senarai" : "Tunjuk Semua"}
+                                </button>
+                                <button
+                                  onClick={exportCalendarEvents}
+                                  className="px-3 py-2 text-xs font-semibold text-emerald-600 hover:text-emerald-800 border border-emerald-200 rounded bg-emerald-50"
+                                >
+                                  Eksport
+                                </button>
+                              </div>
+
+                              {showAllAgenda && (
+                                <div className="mt-5 pt-4 border-t border-slate-100">
+                                  <h4 className="text-sm font-bold text-slate-700 mb-3">Semua Agenda</h4>
+                                  {calendarEvents.length === 0 ? (
+                                    <p className="text-xs text-slate-400">Tiada agenda disimpan.</p>
+                                  ) : (
+                                    <div className="space-y-2 max-h-56 overflow-y-auto pr-2">
+                                      {calendarEvents
+                                        .slice()
+                                        .sort((a, b) => a.date.localeCompare(b.date))
+                                        .map((ev) => (
+                                          <div key={`all-${ev.id}`} className="flex items-center justify-between bg-white border border-slate-100 rounded px-3 py-2 text-xs">
+                                            <div className="flex items-center gap-2">
+                                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold uppercase tracking-wide">{ev.category}</span>
+                                              <span className="text-slate-700 font-medium">{ev.title}</span>
+                                            </div>
+                                            <span className="text-slate-400">{formatSelectedDate(ev.date)}</span>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                          </div>
+                      </Card>
+                    </div>
+                  </div>
+                );
+
+              case 'profil':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Profil Sekolah" subtitle="Identiti Korporat" />
+                    <Card>
+                      <div className="grid md:grid-cols-2 gap-10">
+                        <div>
+                           <h3 className="text-2xl font-bold text-slate-900 mb-6">{schoolInfo.name}</h3>
+                           <div className="space-y-4 text-slate-600 text-sm">
+                              <div className="flex border-b border-slate-100 pb-2">
+                                <span className="font-semibold w-32 text-slate-800">Kod Sekolah</span>
+                                <span>{schoolInfo.code}</span>
+                              </div>
+                              <div className="flex border-b border-slate-100 pb-2">
+                                <span className="font-semibold w-32 text-slate-800">Moto</span>
+                                <span>{schoolInfo.motto}</span>
+                              </div>
+                              <div className="flex border-b border-slate-100 pb-2">
+                                <span className="font-semibold w-32 text-slate-800">Telefon</span>
+                                <span>{schoolInfo.phone}</span>
+                              </div>
+                              <div className="flex border-b border-slate-100 pb-2">
+                                <span className="font-semibold w-32 text-slate-800">Alamat</span>
+                                <span>Jalan Pendidikan, 15000 Kota Bharu, Kelantan.</span>
+                              </div>
+                           </div>
+                        </div>
+                        <div className="bg-slate-50 p-6 rounded border border-slate-100">
+                           <h4 className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-sm">Visi</h4>
+                           <p className="text-sm text-slate-600 italic mb-6 leading-relaxed">"Pendidikan Berkualiti Insan Terdidik Negara Sejahtera"</p>
+                           <h4 className="font-bold text-slate-900 mb-3 uppercase tracking-wider text-sm">Misi</h4>
+                           <p className="text-sm text-slate-600 italic leading-relaxed">"Melestarikan Sistem Pendidikan Yang Berkualiti Untuk Membangunkan Potensi Individu Bagi Memenuhi Aspirasi Negara"</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                );
+
+              case 'pentadbiran':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Pentadbiran" subtitle="Pengurusan Tertinggi" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {pentadbiran.map((person, idx) => {
+                        const isHead = idx === 0;
+                        const legacyPhoto = person.photo?.trim();
+                        const photoUrl = person.photoUrl?.trim() || legacyPhoto;
+                        const photoSrc = person.photoMode === "upload" ? person.photoData : photoUrl;
+                        const avatar = photoSrc ? (
+                          <img src={photoSrc} alt={person.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={isHead ? 64 : 28} className={isHead ? "text-slate-300" : "text-slate-400"} />
+                        );
+
+                        if (isHead) {
+                          return (
+                            <div key={person.id ?? idx} className="md:col-span-3 flex flex-col items-center p-8 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-slate-200">
+                               <div className="w-32 h-32 rounded-full bg-slate-100 mb-4 flex items-center justify-center border-4 border-slate-50 overflow-hidden">
+                                  {avatar}
+                               </div>
+                               <h3 className="text-xl font-bold text-slate-800">{person.name || schoolInfo.hmName}</h3>
+                               <span className="text-slate-500 font-medium text-sm uppercase tracking-widest mt-1">{person.role || "Guru Besar"}</span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <Card key={person.id ?? idx} className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto rounded-full bg-slate-50 mb-4 flex items-center justify-center border border-slate-100 overflow-hidden">
+                              {avatar}
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-sm">{person.name}</h4>
+                            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wide">{person.role}</p>
+                          </Card>
+                        );
+                      })}
+                    </div>
+
+                    {isAdmin ? (
+                    <Card>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">Editor Carta Pentadbiran</h3>
+                          <p className="text-xs text-slate-500">Kemaskini nama, jawatan, dan pautan gambar.</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={resetPentadbiran}
+                            className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                          >
+                            Reset
+                          </button>
+                          <button
+                            onClick={addPentadbiran}
+                            className="text-xs font-semibold text-sky-600 hover:text-sky-800"
+                          >
+                            + Tambah
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {draftPentadbiran.map((person, index) => (
+                          <div key={person.id ?? index} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                            <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                              Jawatan
+                              <input
+                                type="text"
+                                value={person.role}
+                                onChange={(e) => updatePentadbiran(index, 'role', e.target.value)}
+                                className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              />
+                            </label>
+                            <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                              Nama
+                              <input
+                                type="text"
+                                value={person.name}
+                                onChange={(e) => updatePentadbiran(index, 'name', e.target.value)}
+                                className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              />
+                            </label>
+                            <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                              Pilih Cara Gambar
+                              <select
+                                value={person.photoMode || "url"}
+                                onChange={(e) => updatePentadbiran(index, 'photoMode', e.target.value)}
+                                className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              >
+                                <option value="url">URL</option>
+                                <option value="upload">Upload</option>
+                              </select>
+                            </label>
+
+                            {person.photoMode !== "upload" ? (
+                              <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                URL Gambar
+                                <input
+                                  type="text"
+                                  value={person.photoUrl || ""}
+                                  onChange={(e) => updatePentadbiran(index, 'photoUrl', e.target.value)}
+                                  className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                  placeholder="https://..."
+                                />
+                              </label>
+                            ) : (
+                              <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                                Upload Gambar
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handlePentadbiranUpload(index, e.target.files?.[0])}
+                                  className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                                />
+                              </label>
+                            )}
+                            <div className="md:col-span-6 flex justify-end">
+                              <button
+                                onClick={() => removePentadbiran(index)}
+                                className="text-xs font-semibold text-rose-500 hover:text-rose-700"
+                              >
+                                Buang
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-6">
+                        <button
+                          onClick={savePentadbiran}
+                          className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition"
+                        >
+                          Simpan
+                        </button>
+                        <span className="text-xs text-slate-500">{pentadbiranStatus}</span>
+                      </div>
+                    </Card>
+                    ) : (
+                      <Card>
+                        <div className="text-center py-8 text-slate-500 text-sm">
+                          Log masuk sebagai admin untuk kemaskini carta pentadbiran.
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+                );
+
+              // --- SUB-MENU AKADEMIK PAGES ---
+              case 'akademik':
+                  // Paparan Utama Akademik
+                  return (
+                    <div className="animate-fade-in space-y-6">
+                        <SectionHeader title="Pengurusan Akademik" subtitle="Pusat Kecemerlangan" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div 
+                                onClick={() => setActiveTab('jawatankuasa')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-amber-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 text-amber-500 group-hover:bg-amber-100">
+                                    <Users size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Jawatankuasa</h4>
+                                <p className="text-xs text-slate-500 mt-1">Carta Organisasi & AJK</p>
+                             </div>
+                             
+                             <div 
+                                onClick={() => setActiveTab('jadual-waktu')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-amber-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 text-amber-500 group-hover:bg-amber-100">
+                                    <Calendar size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Jadual Waktu</h4>
+                                <p className="text-xs text-slate-500 mt-1">Kelas & Guru</p>
+                             </div>
+
+                             <div 
+                                onClick={() => setActiveTab('erph')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-amber-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 text-amber-500 group-hover:bg-amber-100">
+                                    <BookOpen size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">e-RPH Guru</h4>
+                                <p className="text-xs text-slate-500 mt-1">Penghantaran Rekod</p>
+                             </div>
+                        </div>
+                    </div>
+                  );
+              
+              case 'jawatankuasa':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Jawatankuasa Akademik" subtitle="Struktur Organisasi Kurikulum" />
+                    <Card>
+                       <div
+                         style={{
+                           position: "relative",
+                           width: "100%",
+                           height: 0,
+                           paddingTop: "66.6740%",
+                           paddingBottom: 0,
+                           boxShadow: "0 2px 8px 0 rgba(63,69,81,0.16)",
+                           marginTop: "1.6em",
+                           marginBottom: "0.9em",
+                           overflow: "hidden",
+                           borderRadius: "8px",
+                           willChange: "transform",
+                         }}
+                       >
+                         <iframe
+                           loading="lazy"
+                           style={{
+                             position: "absolute",
+                             width: "100%",
+                             height: "100%",
+                             top: 0,
+                             left: 0,
+                             border: "none",
+                           padding: 0,
+                           margin: 0,
+                         }}
+                          src="https://www.canva.com/design/DAG_ZgTsooM/b_JKz9vaJuPL_0OGmGpRaw/view?embed"
+                          allowFullScreen
+                         ></iframe>
+                       </div>
+                       
+                    </Card>
+                  </div>
+                );
+
+              case 'jadual-waktu':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Jadual Waktu" subtitle="Jadual Kelas & Guru" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {[
+                        { id: "guru", label: "Jadual Waktu Guru", icon: <User size={28} />, color: "text-amber-500", hint: "Mengikut guru" },
+                        { id: "kelas", label: "Jadual Waktu Kelas", icon: <Users size={28} />, color: "text-emerald-500", hint: "Mengikut kelas" },
+                        { id: "induk", label: "Jadual Waktu Induk", icon: <Calendar size={28} />, color: "text-sky-500", hint: "Induk sekolah" },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => setJadualTab(item.id)}
+                          className={`text-left bg-white p-6 rounded-lg shadow-sm border transition ${
+                            jadualTab === item.id
+                              ? "border-amber-400 shadow-md"
+                              : "border-slate-200 hover:border-amber-300"
+                          }`}
+                        >
+                          <div className={`w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-3 ${item.color}`}>
+                            {item.icon}
+                          </div>
+                          <h3 className="text-base font-bold text-slate-800">{item.label}</h3>
+                          <p className="text-xs text-slate-500 mt-1">{item.hint}</p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <Card>
+                      <div className="text-center py-10">
+                        {jadualTab === "guru" && (
+                          <>
+                            <User size={64} className="mx-auto text-amber-400 mb-4" />
+                            <h3 className="text-xl font-bold text-slate-800">Jadual Waktu Guru</h3>
+                            <p className="text-slate-500 mt-2">Paparan jadual mengikut guru.</p>
+                            <div className="mt-6 max-w-sm mx-auto text-left">
+                              <label className="text-xs font-semibold text-slate-600">
+                                Pilih Guru
+                                <select
+                                  className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                  value={selectedTeacher}
+                                  onChange={(e) => {
+                                    const name = e.target.value;
+                                    setSelectedTeacher(name);
+                                    setTeacherImageError("");
+                                    setTeacherImageMode("thumb");
+                                    const fileId = teacherPdfMap[name];
+                                    if (fileId) {
+                                      setSelectedTeacherImage(DRIVE_IMAGE_URL(fileId));
+                                    } else {
+                                      setSelectedTeacherImage("");
+                                    }
+                                  }}
+                                >
+                                  <option value="">Pilih Guru</option>
+                                  {guruList.map((guru, idx) => (
+                                    <option key={`${guru}-${idx}`} value={guru}>{guru}</option>
+                                  ))}
+                                </select>
+                                {teacherPdfError && (
+                                  <p className="text-[11px] text-rose-500 mt-2">{teacherPdfError}</p>
+                                )}
+                              </label>
+                            </div>
+                            {selectedTeacherImage && (
+                              <div className="mt-6 rounded border border-slate-200 overflow-hidden bg-white">
+                                <img
+                                  src={selectedTeacherImage}
+                                  alt={`Jadual ${selectedTeacher}`}
+                                  className="w-full h-auto"
+                                  onClick={() => {
+                                    if (!selectedTeacher) return;
+                                    const fileId = teacherPdfMap[selectedTeacher];
+                                    if (!fileId) return;
+                                    setTeacherImageMode("full");
+                                    setSelectedTeacherImage(DRIVE_IMAGE_ORIGINAL_URL(fileId));
+                                  }}
+                                  onError={() => {
+                                    const fileId = teacherPdfMap[selectedTeacher];
+                                    if (teacherImageMode === "full" && fileId) {
+                                      setTeacherImageError("Gagal muat saiz asal. Paparan thumbnail digunakan.");
+                                      setTeacherImageMode("thumb");
+                                      setSelectedTeacherImage(DRIVE_IMAGE_URL(fileId));
+                                    }
+                                  }}
+                                />
+                                <div className="px-3 py-2 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                                  <span>
+                                    {teacherImageMode === "full" ? "Paparan Saiz Asal" : "Pratonton (klik imej untuk saiz asal)"}
+                                  </span>
+                                  {teacherImageError && (
+                                    <span className="text-rose-500">{teacherImageError}</span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {jadualTab === "kelas" && (
+                          <>
+                            <Users size={64} className="mx-auto text-emerald-400 mb-4" />
+                            <h3 className="text-xl font-bold text-slate-800">Jadual Waktu Kelas</h3>
+                            <p className="text-slate-500 mt-2">Paparan jadual mengikut kelas.</p>
+                            <div className="mt-6 max-w-sm mx-auto text-left">
+                              <label className="text-xs font-semibold text-slate-600">
+                                Pilih Kelas
+                                <select
+                                  className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                                  value={selectedClass}
+                                  onChange={(e) => {
+                                    const name = e.target.value;
+                                    setSelectedClass(name);
+                                    setClassImageError("");
+                                    setClassImageMode("thumb");
+                                    const fileId = classPdfMap[name];
+                                    if (fileId) {
+                                      setSelectedClassImage(DRIVE_IMAGE_URL(fileId));
+                                    } else {
+                                      setSelectedClassImage("");
+                                    }
+                                  }}
+                                >
+                                  <option value="">Pilih Kelas</option>
+                                  {kelasList.map((kelas, idx) => (
+                                    <option key={`${kelas}-${idx}`} value={kelas}>{kelas}</option>
+                                  ))}
+                                </select>
+                                {classPdfError && (
+                                  <p className="text-[11px] text-rose-500 mt-2">{classPdfError}</p>
+                                )}
+                              </label>
+                            </div>
+                            {selectedClassImage && (
+                              <div className="mt-6 rounded border border-slate-200 overflow-hidden bg-white">
+                                <img
+                                  src={selectedClassImage}
+                                  alt={`Jadual ${selectedClass}`}
+                                  className="w-full h-auto"
+                                  onClick={() => {
+                                    if (!selectedClass) return;
+                                    const fileId = classPdfMap[selectedClass];
+                                    if (!fileId) return;
+                                    setClassImageMode("full");
+                                    setSelectedClassImage(DRIVE_IMAGE_ORIGINAL_URL(fileId));
+                                  }}
+                                  onError={() => {
+                                    const fileId = classPdfMap[selectedClass];
+                                    if (classImageMode === "full" && fileId) {
+                                      setClassImageError("Gagal muat saiz asal. Paparan thumbnail digunakan.");
+                                      setClassImageMode("thumb");
+                                      setSelectedClassImage(DRIVE_IMAGE_URL(fileId));
+                                    }
+                                  }}
+                                />
+                                <div className="px-3 py-2 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                                  <span>
+                                    {classImageMode === "full" ? "Paparan Saiz Asal" : "Pratonton (klik imej untuk saiz asal)"}
+                                  </span>
+                                  {classImageError && (
+                                    <span className="text-rose-500">{classImageError}</span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {jadualTab === "induk" && (
+                          <>
+                            <Calendar size={64} className="mx-auto text-sky-400 mb-4" />
+                            <h3 className="text-xl font-bold text-slate-800">Jadual Waktu Induk</h3>
+                            <p className="text-slate-500 mt-2">Paparan jadual induk sekolah.</p>
+                          </>
+                        )}
+                      </div>
+                    </Card>
+                  </div>
+                );
+
+              case 'analisis-uasa':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Analisis UASA" subtitle="Pencapaian Akademik Murid" />
+                    <Card className="border-t-4 border-t-purple-600">
+                         <h3 className="font-bold text-lg mb-4 flex items-center text-slate-800">Prestasi UASA Keseluruhan</h3>
+                         <p className="text-sm text-slate-500 mb-6">Analisis pencapaian murid dalam Ujian Akhir Sesi Akademik terkini.</p>
+                         <div className="space-y-6">
+                            <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
+                                    <span>Bahasa Melayu</span>
+                                    <span>92% Lulus</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-3 rounded-full"><div className="w-[92%] h-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-sm"></div></div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
+                                    <span>Bahasa Inggeris</span>
+                                    <span>85% Lulus</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-3 rounded-full"><div className="w-[85%] h-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full shadow-sm"></div></div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
+                                    <span>Matematik</span>
+                                    <span>78% Lulus</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-3 rounded-full"><div className="w-[78%] h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-sm"></div></div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-2">
+                                    <span>Sains</span>
+                                    <span>82% Lulus</span>
+                                </div>
+                                <div className="w-full bg-slate-100 h-3 rounded-full"><div className="w-[82%] h-3 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full shadow-sm"></div></div>
+                            </div>
+                         </div>
+                      </Card>
+                  </div>
+                );
+
+              case 'pbd':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Pentaksiran Bilik Darjah (PBD)" subtitle="Pelaporan Berterusan" />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card className="text-center border-t-4 border-t-green-500">
+                            <h3 className="font-bold text-slate-800 text-lg">Tahap Penguasaan 6</h3>
+                            <p className="text-3xl font-extrabold text-green-600 my-2">15%</p>
+                            <p className="text-xs text-slate-500">Murid Cemerlang</p>
+                        </Card>
+                        <Card className="text-center border-t-4 border-t-blue-500">
+                            <h3 className="font-bold text-slate-800 text-lg">Tahap Penguasaan 4-5</h3>
+                            <p className="text-3xl font-extrabold text-blue-600 my-2">60%</p>
+                            <p className="text-xs text-slate-500">Murid Baik & Memuaskan</p>
+                        </Card>
+                        <Card className="text-center border-t-4 border-t-red-500">
+                            <h3 className="font-bold text-slate-800 text-lg">Tahap Penguasaan 1-3</h3>
+                            <p className="text-3xl font-extrabold text-red-600 my-2">25%</p>
+                            <p className="text-xs text-slate-500">Perlu Bimbingan</p>
+                        </Card>
+                    </div>
+                  </div>
+                 );
+
+              case 'erph':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="e-RPH Guru" subtitle="Rekod Pengajaran Harian" />
+                    <Card className="border-t-4 border-t-blue-800">
+                         <h3 className="font-bold text-lg mb-4 flex items-center text-slate-800">Status Penghantaran Minggu 4</h3>
+                         <div className="flex justify-between items-center bg-slate-50 p-4 rounded border border-slate-100 mb-6">
+                            <div className="flex items-center">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
+                                    <BookOpen size={20} />
+                                </div>
+                                <div>
+                                    <p className="font-bold text-slate-700">Minggu Persekolahan 4</p>
+                                    <p className="text-xs text-slate-500">2 Feb - 6 Feb 2026</p>
+                                </div>
+                            </div>
+                            <span className="text-xs font-bold text-white bg-green-500 px-3 py-1 rounded">Dihantar</span>
+                         </div>
+                         <div className="flex gap-4">
+                             <button className="flex-1 bg-gradient-to-r from-blue-700 to-indigo-800 text-white py-3 rounded text-sm font-bold hover:from-blue-800 hover:to-indigo-900 transition shadow-sm">Hantar RPH Baru</button>
+                             <button className="flex-1 border border-slate-300 text-slate-600 py-3 rounded text-sm font-bold hover:bg-slate-50 transition">Lihat Sejarah</button>
+                         </div>
+                      </Card>
+                  </div>
+                 );
+
+              // --- SUB-MENU HAL EHWAL MURID PAGES ---
+              case 'hem':
+                  // Paparan Utama HEM
+                  return (
+                    <div className="animate-fade-in space-y-6">
+                        <SectionHeader title="Hal Ehwal Murid" subtitle="Pembangunan Sahsiah & Kebajikan" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div 
+                                onClick={() => setActiveTab('hem-jawatankuasa')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-rose-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 text-rose-500 group-hover:bg-rose-100">
+                                    <Users size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Jawatankuasa</h4>
+                                <p className="text-xs text-slate-500 mt-1">Unit HEM & Disiplin</p>
+                             </div>
+                             
+                             <div 
+                                onClick={() => setActiveTab('hem-analisis')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-rose-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 text-rose-500 group-hover:bg-rose-100">
+                                    <BarChart2 size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Analisis Murid</h4>
+                                <p className="text-xs text-slate-500 mt-1">Data & Enrolmen</p>
+                             </div>
+
+                             <div 
+                                onClick={() => setActiveTab('hem-kehadiran')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-rose-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-3 text-rose-500 group-hover:bg-rose-100">
+                                    <UserCheck size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Kehadiran Murid</h4>
+                                <p className="text-xs text-slate-500 mt-1">Rekod Harian APDM</p>
+                             </div>
+                        </div>
+                    </div>
+                  );
+              
+              case 'hem-jawatankuasa':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Jawatankuasa HEM" subtitle="Pengurusan Hal Ehwal Murid" />
+                    <Card>
+                       <div
+                         style={{
+                           position: "relative",
+                           width: "100%",
+                           height: 0,
+                           paddingTop: "66.6740%",
+                           paddingBottom: 0,
+                           boxShadow: "0 2px 8px 0 rgba(63,69,81,0.16)",
+                           marginTop: "0.5em",
+                           marginBottom: "0.9em",
+                           overflow: "hidden",
+                           borderRadius: "8px",
+                           willChange: "transform",
+                         }}
+                       >
+                         <iframe
+                           loading="lazy"
+                           style={{
+                             position: "absolute",
+                             width: "100%",
+                             height: "100%",
+                             top: 0,
+                             left: 0,
+                             border: "none",
+                             padding: 0,
+                             margin: 0,
+                           }}
+                           src="https://www.canva.com/design/DAGsYDxw340/HOZJP7xyNrzRfN7eDARNmQ/view?embed"
+                           allowFullScreen
+                         ></iframe>
+                       </div>
+                    </Card>
+                  </div>
+                 );
+
+              case 'hem-analisis':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Analisis Murid" subtitle="Data Enrolmen & Profil" />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <Card>
+                        <div className="space-y-3">
+                          <div className="text-center">
+                            <h3 className="text-lg font-bold text-slate-800">Jantina</h3>
+                            <p className="text-slate-500 mt-2">Agihan murid mengikut jantina.</p>
+                          </div>
+                          <EnrolmenChart
+                            sheetId={ENROL_SHEET_ID}
+                            sheetName="FULL"
+                            containerId="enrolmen-jantina-chart"
+                            chartType="PieChart"
+                            query="select B, count(B) where B is not null and lower(B) <> 'jantina' group by B label B 'Jantina', count(B) 'Bilangan'"
+                          />
+                        </div>
+                      </Card>
+
+                      <Card>
+                        <div className="space-y-3">
+                          <div className="text-center">
+                            <h3 className="text-lg font-bold text-slate-800">Kaum</h3>
+                            <p className="text-slate-500 mt-2">Agihan murid mengikut kaum.</p>
+                          </div>
+                          <EnrolmenChart
+                            sheetId={ENROL_SHEET_ID}
+                            sheetName="FULL"
+                            containerId="enrolmen-kaum-chart"
+                            chartType="PieChart"
+                            query="select C, count(C) where C is not null and lower(C) <> 'kaum' group by C label C 'Kaum', count(C) 'Bilangan'"
+                            priorityLabel="SUNGAI"
+                          />
+                        </div>
+                      </Card>
+
+                      <Card>
+                        <div className="space-y-3">
+                          <div className="text-center">
+                            <h3 className="text-lg font-bold text-slate-800">Agama</h3>
+                            <p className="text-slate-500 mt-2">Agihan murid mengikut agama.</p>
+                          </div>
+                          <EnrolmenChart
+                            sheetId={ENROL_SHEET_ID}
+                            sheetName="FULL"
+                            containerId="enrolmen-agama-chart"
+                            chartType="PieChart"
+                            query="select D, count(D) where D is not null and lower(D) <> 'agama' group by D label D 'Agama', count(D) 'Bilangan'"
+                          />
+                        </div>
+                      </Card>
+                    </div>
+                  </div>
+                 );
+
+              case 'hem-kehadiran':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Kehadiran Murid" subtitle="Rekod APDM Harian" />
+                    <Card>
+                       <div className="text-center py-10">
+                          <UserCheck size={64} className="mx-auto text-rose-400 mb-4" />
+                          <h3 className="text-xl font-bold text-slate-800">Laporan Kehadiran</h3>
+                          <p className="text-slate-500 mt-2">Peratus kehadiran harian dan bulanan murid.</p>
+                       </div>
+                    </Card>
+                  </div>
+                 );
+
+              case 'laporan':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Laporan & Analitik" subtitle="OPR Report" />
+                    <OprApp />
+                  </div>
+                );
+
+              // --- SUB-MENU KOKURIKULUM PAGES ---
+              case 'koko':
+                  // Paparan Utama Kokurikulum
+                  return (
+                    <div className="animate-fade-in space-y-6">
+                        <SectionHeader title="Pengurusan Kokurikulum" subtitle="Unit Beruniform, Kelab & Sukan" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div 
+                                onClick={() => setActiveTab('koko-jawatankuasa')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-cyan-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center mx-auto mb-3 text-cyan-500 group-hover:bg-cyan-100">
+                                    <Users size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Jawatankuasa</h4>
+                                <p className="text-xs text-slate-500 mt-1">Induk & Unit Koko</p>
+                             </div>
+                             
+                             <div 
+                                onClick={() => setActiveTab('koko-analisis')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-cyan-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center mx-auto mb-3 text-cyan-500 group-hover:bg-cyan-100">
+                                    <BarChart2 size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Analisis Unit</h4>
+                                <p className="text-xs text-slate-500 mt-1">Data & Pencapaian</p>
+                             </div>
+
+                             <div 
+                                onClick={() => setActiveTab('koko-kehadiran')}
+                                className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 hover:border-cyan-400 cursor-pointer transition text-center group"
+                             >
+                                <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center mx-auto mb-3 text-cyan-500 group-hover:bg-cyan-100">
+                                    <Activity size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-800">Kehadiran Unit</h4>
+                                <p className="text-xs text-slate-500 mt-1">Rekod Aktiviti Mingguan</p>
+                             </div>
+                        </div>
+                    </div>
+                  );
+              
+              case 'koko-jawatankuasa':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Jawatankuasa Kokurikulum" subtitle="Organisasi PAJSK" />
+                    <Card>
+                       <div
+                         style={{
+                           position: "relative",
+                           width: "100%",
+                           height: 0,
+                           paddingTop: "66.6740%",
+                           paddingBottom: 0,
+                           boxShadow: "0 2px 8px 0 rgba(63,69,81,0.16)",
+                           marginTop: "0.5em",
+                           marginBottom: "0.9em",
+                           overflow: "hidden",
+                           borderRadius: "8px",
+                           willChange: "transform",
+                         }}
+                       >
+                         <iframe
+                           loading="lazy"
+                           style={{
+                             position: "absolute",
+                             width: "100%",
+                             height: "100%",
+                             top: 0,
+                             left: 0,
+                             border: "none",
+                             padding: 0,
+                             margin: 0,
+                           }}
+                           src="https://www.canva.com/design/DAGsYDxw340/HOZJP7xyNrzRfN7eDARNmQ/view?embed"
+                           allowFullScreen
+                         ></iframe>
+                       </div>
+                       <a
+                         href="https://www.canva.com/design/DAGsYDxw340/HOZJP7xyNrzRfN7eDARNmQ/view?utm_content=DAGsYDxw340&utm_campaign=designshare&utm_medium=embeds&utm_source=link"
+                         target="_blank"
+                         rel="noopener"
+                         className="text-xs text-slate-500 hover:text-slate-800"
+                       >
+                       </a>
+                    </Card>
+                  </div>
+                 );
+
+              case 'koko-analisis':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Analisis Kokurikulum" subtitle="Pencapaian & Skor" />
+                    <Card>
+                       <div className="text-center py-10">
+                          <BarChart2 size={64} className="mx-auto text-cyan-400 mb-4" />
+                          <h3 className="text-xl font-bold text-slate-800">Analisis PAJSK</h3>
+                          <p className="text-slate-500 mt-2">Skor pencapaian murid dalam aktiviti kokurikulum.</p>
+                       </div>
+                    </Card>
+                  </div>
+                 );
+
+              case 'koko-kehadiran':
+                 return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Kehadiran Kokurikulum" subtitle="Rekod Aktiviti" />
+                    <Card>
+                       <div className="text-center py-10">
+                          <Activity size={64} className="mx-auto text-cyan-400 mb-4" />
+                          <h3 className="text-xl font-bold text-slate-800">Laporan Kehadiran Mingguan</h3>
+                          <p className="text-slate-500 mt-2">Rekod kehadiran perjumpaan unit kokurikulum.</p>
+                       </div>
+                    </Card>
+                  </div>
+                 );
+
+
+              case 'pencapaian':
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Pencapaian Sekolah" subtitle="Anugerah & Pengiktirafan" />
+                    <Card>
+                       <div className="text-center py-10">
+                          <Award size={64} className="mx-auto text-teal-400 mb-4" />
+                          <h3 className="text-xl font-bold text-slate-800">Rekod Pencapaian</h3>
+                          <p className="text-slate-500 mt-2">Halaman ini akan memaparkan senarai anugerah dan pencapaian sekolah.</p>
+                          <button className="mt-6 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition">Tambah Rekod</button>
+                       </div>
+                    </Card>
+                  </div>
+                );
+
+              case 'kemaskini':
+                const draftLogo = draftSchoolInfo.logo || { mode: "url", url: "", data: "" };
+                const draftHmPhoto = draftSchoolInfo.hmPhoto || { mode: "upload", url: "", data: "" };
+                return (
+                  <div className="animate-fade-in space-y-6">
+                    <SectionHeader title="Kemaskini Data" subtitle="Borang ringkas untuk kemaskini maklumat laman" />
+                    <Card>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">Maklumat Sekolah</h3>
+                          <p className="text-xs text-slate-500">Isikan medan di bawah dan klik Simpan.</p>
+                        </div>
+                        <button
+                          onClick={resetDrafts}
+                          className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                        >
+                          Reset
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className="text-xs font-semibold text-slate-600">
+                          Nama Sekolah
+                          <input
+                            type="text"
+                            value={draftSchoolInfo.name}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, name: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Kod Sekolah
+                          <input
+                            type="text"
+                            value={draftSchoolInfo.code}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, code: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Moto
+                          <input
+                            type="text"
+                            value={draftSchoolInfo.motto}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, motto: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Telefon
+                          <input
+                            type="text"
+                            value={draftSchoolInfo.phone}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, phone: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Logo Sekolah (Mod)
+                          <select
+                            value={draftLogo.mode || "url"}
+                            onChange={(e) =>
+                              setDraftSchoolInfo({
+                                ...draftSchoolInfo,
+                                logo: { ...draftLogo, mode: e.target.value }
+                              })
+                            }
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          >
+                            <option value="url">URL</option>
+                            <option value="upload">Upload</option>
+                          </select>
+                        </label>
+                        {draftLogo.mode !== "upload" ? (
+                          <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                            URL Logo Sekolah
+                            <input
+                              type="text"
+                              value={draftLogo.url || ""}
+                              onChange={(e) =>
+                                setDraftSchoolInfo({
+                                  ...draftSchoolInfo,
+                                  logo: { ...draftLogo, url: e.target.value }
+                                })
+                              }
+                              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              placeholder="https://..."
+                            />
+                          </label>
+                        ) : (
+                          <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                            Upload Logo Sekolah
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                            />
+                          </label>
+                        )}
+                        <div className="md:col-span-2">
+                          <div className="mt-2 rounded border border-slate-200 bg-white px-4 py-3 flex items-center justify-center">
+                            {draftLogo.mode === "upload" ? (
+                              draftLogo.data ? (
+                                <img src={draftLogo.data} alt="Logo Sekolah" className="h-16 w-16 object-contain" />
+                              ) : (
+                                <p className="text-xs text-slate-400">Tiada logo dimuat naik.</p>
+                              )
+                            ) : draftLogo.url ? (
+                              <img src={draftLogo.url} alt="Logo Sekolah" className="h-16 w-16 object-contain" />
+                            ) : (
+                              <p className="text-xs text-slate-400">Tiada URL logo.</p>
+                            )}
+                          </div>
+                        </div>
+                        <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                          Nama Guru Besar
+                          <input
+                            type="text"
+                            value={draftSchoolInfo.hmName}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, hmName: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Foto Guru Besar (Mod)
+                          <select
+                            value={draftHmPhoto.mode || "upload"}
+                            onChange={(e) =>
+                              setDraftSchoolInfo({
+                                ...draftSchoolInfo,
+                                hmPhoto: { ...draftHmPhoto, mode: e.target.value }
+                              })
+                            }
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          >
+                            <option value="upload">Upload</option>
+                            <option value="url">URL</option>
+                          </select>
+                        </label>
+                        {draftHmPhoto.mode === "url" ? (
+                          <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                            URL Foto Guru Besar
+                            <input
+                              type="text"
+                              value={draftHmPhoto.url || ""}
+                              onChange={(e) =>
+                                setDraftSchoolInfo({
+                                  ...draftSchoolInfo,
+                                  hmPhoto: { ...draftHmPhoto, url: e.target.value }
+                                })
+                              }
+                              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              placeholder="https://..."
+                            />
+                          </label>
+                        ) : (
+                          <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                            Upload Foto Guru Besar
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleHmPhotoUpload(e.target.files?.[0])}
+                              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                            />
+                          </label>
+                        )}
+                        <div className="md:col-span-2">
+                          <div className="mt-2 rounded border border-slate-200 bg-white px-4 py-3 flex items-center justify-center">
+                            {draftHmPhoto.mode === "upload" ? (
+                              draftHmPhoto.data ? (
+                                <img src={draftHmPhoto.data} alt="Foto Guru Besar" className="h-40 w-28 object-cover rounded-md" />
+                              ) : (
+                                <p className="text-xs text-slate-400">Tiada foto dimuat naik.</p>
+                              )
+                            ) : draftHmPhoto.url ? (
+                              <img src={draftHmPhoto.url} alt="Foto Guru Besar" className="h-40 w-28 object-cover rounded-md" />
+                            ) : (
+                              <p className="text-xs text-slate-400">Tiada URL foto.</p>
+                            )}
+                          </div>
+                        </div>
+                        <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                          Ucapan Guru Besar
+                          <textarea
+                            rows="4"
+                            value={draftSchoolInfo.hmMessage}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, hmMessage: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Bilangan Murid
+                          <input
+                            type="number"
+                            value={draftSchoolInfo.studentsCount}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, studentsCount: Number(e.target.value) })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Bilangan Guru
+                          <input
+                            type="number"
+                            value={draftSchoolInfo.teachersCount}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, teachersCount: Number(e.target.value) })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                        <label className="text-xs font-semibold text-slate-600">
+                          Peratus Kehadiran
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={draftSchoolInfo.attendanceRate}
+                            onChange={(e) => setDraftSchoolInfo({ ...draftSchoolInfo, attendanceRate: Number(e.target.value) })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          />
+                        </label>
+                      </div>
+                    </Card>
+
+                    <Card>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">Berita Terkini</h3>
+                          <p className="text-xs text-slate-500">Tambah atau kemaskini senarai berita.</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const newItem = {
+                              id: Date.now(),
+                              title: "Aktiviti Baru",
+                              date: new Date().toLocaleDateString('ms-MY'),
+                              category: "Umum"
+                            };
+                            setDraftNewsUpdates([...draftNewsUpdates, newItem]);
+                          }}
+                          className="text-xs font-semibold text-sky-600 hover:text-sky-800"
+                        >
+                          + Tambah
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {draftNewsUpdates.map((item, index) => (
+                          <div key={item.id ?? index} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                            <label className="text-xs font-semibold text-slate-600 md:col-span-2">
+                              Tajuk
+                              <input
+                                type="text"
+                                value={item.title}
+                                onChange={(e) => {
+                                  const updated = [...draftNewsUpdates];
+                                  updated[index] = { ...updated[index], title: e.target.value };
+                                  setDraftNewsUpdates(updated);
+                                }}
+                                className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              />
+                            </label>
+                            <label className="text-xs font-semibold text-slate-600">
+                              Tarikh
+                              <input
+                                type="text"
+                                value={item.date}
+                                onChange={(e) => {
+                                  const updated = [...draftNewsUpdates];
+                                  updated[index] = { ...updated[index], date: e.target.value };
+                                  setDraftNewsUpdates(updated);
+                                }}
+                                className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              />
+                            </label>
+                            <label className="text-xs font-semibold text-slate-600">
+                              Kategori
+                              <input
+                                type="text"
+                                value={item.category}
+                                onChange={(e) => {
+                                  const updated = [...draftNewsUpdates];
+                                  updated[index] = { ...updated[index], category: e.target.value };
+                                  setDraftNewsUpdates(updated);
+                                }}
+                                className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              />
+                            </label>
+                            <div className="md:col-span-4 flex justify-end">
+                              <button
+                                onClick={() => {
+                                  const filtered = draftNewsUpdates.filter((_, i) => i !== index);
+                                  setDraftNewsUpdates(filtered);
+                                }}
+                                className="text-xs font-semibold text-rose-500 hover:text-rose-700"
+                              >
+                                Buang
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+
+                    <Card>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">Senarai Jadual Waktu</h3>
+                          <p className="text-xs text-slate-500">Kemaskini senarai guru dan kelas untuk dropdown.</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={resetJadualOptions}
+                            className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                          >
+                            Reset
+                          </button>
+                          <button
+                            onClick={saveJadualOptions}
+                            className="text-xs font-semibold text-sky-600 hover:text-sky-800"
+                          >
+                            Simpan
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-800 mb-3">Senarai Guru</h4>
+                          <div className="space-y-2">
+                            {draftGuruList.map((guru, index) => (
+                              <div key={`guru-${index}`} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={guru}
+                                  onChange={(e) => updateListItem(setDraftGuruList, draftGuruList, index, e.target.value)}
+                                  className="flex-1 rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                />
+                                <button
+                                  onClick={() => removeListItem(setDraftGuruList, draftGuruList, index)}
+                                  className="text-xs font-semibold text-rose-500 hover:text-rose-700"
+                                >
+                                  Buang
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => addListItem(setDraftGuruList, draftGuruList, "Nama Guru")}
+                            className="mt-3 text-xs font-semibold text-amber-600 hover:text-amber-800"
+                          >
+                            + Tambah Guru
+                          </button>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-800 mb-3">Senarai Kelas</h4>
+                          <div className="space-y-2">
+                            {draftKelasList.map((kelas, index) => (
+                              <div key={`kelas-${index}`} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={kelas}
+                                  onChange={(e) => updateListItem(setDraftKelasList, draftKelasList, index, e.target.value)}
+                                  className="flex-1 rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                                />
+                                <button
+                                  onClick={() => removeListItem(setDraftKelasList, draftKelasList, index)}
+                                  className="text-xs font-semibold text-rose-500 hover:text-rose-700"
+                                >
+                                  Buang
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => addListItem(setDraftKelasList, draftKelasList, "Nama Kelas")}
+                            className="mt-3 text-xs font-semibold text-emerald-600 hover:text-emerald-800"
+                          >
+                            + Tambah Kelas
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-6">
+                        <span className="text-xs text-slate-500">{jadualStatus}</span>
+                      </div>
+                    </Card>
+
+                    <Card>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">Latar Belakang</h3>
+                          <p className="text-xs text-slate-500">Tukar URL gambar latar belakang.</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={resetBackground}
+                            className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                          >
+                            Reset
+                          </button>
+                          <button
+                            onClick={saveBackground}
+                            className="text-xs font-semibold text-sky-600 hover:text-sky-800"
+                          >
+                            Simpan
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className="text-xs font-semibold text-slate-600">
+                          Pilih Cara
+                          <select
+                            value={draftBackground.mode || "url"}
+                            onChange={(e) => setDraftBackground({ ...draftBackground, mode: e.target.value })}
+                            className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                          >
+                            <option value="url">URL</option>
+                            <option value="upload">Upload</option>
+                          </select>
+                        </label>
+
+                        {draftBackground.mode !== "upload" ? (
+                          <label className="text-xs font-semibold text-slate-600">
+                            URL Gambar Latar
+                            <input
+                              type="text"
+                              value={draftBackground.url || ""}
+                              onChange={(e) => setDraftBackground({ ...draftBackground, url: e.target.value })}
+                              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                              placeholder="https://..."
+                            />
+                          </label>
+                        ) : (
+                          <label className="text-xs font-semibold text-slate-600">
+                            Upload Gambar Latar
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleBackgroundUpload(e.target.files?.[0])}
+                              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300"
+                            />
+                          </label>
+                        )}
+                      </div>
+
+                      <div className="mt-4 rounded border border-slate-200 overflow-hidden bg-white">
+                        <img
+                          src={draftBackground.mode === "upload" ? draftBackground.data : (draftBackground.url || "")}
+                          alt="Latar belakang"
+                          className="w-full h-auto"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="text-xs text-slate-500">{backgroundStatus}</span>
+                      </div>
+                    </Card>
+
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={handleSaveAll}
+                        className="px-5 py-2 rounded-lg bg-sky-600 text-white font-semibold shadow hover:bg-sky-700 transition"
+                      >
+                        Simpan
+                      </button>
+                      <span className="text-xs text-slate-500">{saveStatus}</span>
+                    </div>
+                  </div>
+                );
+
+              // ... (Other cases like dokumen, laporan, komunikasi, sistem, default remain mostly same or just placeholder)
+              default:
+                return (
+                  <div className="flex flex-col items-center justify-center h-64 text-slate-400 animate-fade-in">
+                    <Settings size={48} className="mb-4 opacity-20" />
+                    <p>Halaman "{navItems.find(i => i.id === activeTab)?.label || 'ini'}" sedang dikemaskini.</p>
+                  </div>
+                );
+            }
+          };
+
+          return (
+            <div className="min-h-screen flex flex-col font-sans text-slate-800 relative bg-transparent">
+              
+              {/* --- BACKGROUND IMAGE FIXED --- */}
+              <div 
+                 className="fixed inset-0 z-[-1] pointer-events-none"
+                 style={{
+                   backgroundImage: `url('${background.mode === "upload" ? background.data : background.url}')`,
+                   backgroundSize: 'cover',
+                   backgroundPosition: 'center',
+                   backgroundRepeat: 'no-repeat',
+                   filter: 'grayscale(60%) saturate(120%)',
+                 }}
+              >
+                  <div className="absolute inset-0 bg-sky-50/30"></div>
+              </div>
+
+              {/* --- HEADER WRAPPER --- */}
+              {/* Container untuk memposisikan background dan content secara berasingan */}
+              <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+                  
+                  {/* LAYER 1: Background Box */}
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-[5.5rem] bg-slate-900/95 backdrop-blur-md shadow-lg border-b border-white/10"
+                    style={{
+                        backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)',
+                        backgroundSize: '12px 12px'
+                    }}
+                  >
+                      {/* TwinklingGrid dipindahkan ke dalam kotak background header ini */}
+                      <TwinklingGrid />
+                  </div>
+
+                  {/* LAYER 2: Header Content */}
+                  <div className="relative z-10 px-0 lg:px-8 pointer-events-auto">
+                      <header className="h-20 flex items-center justify-between px-6 lg:px-8 header-animated-bg text-white shadow-up-flow relative overflow-hidden rounded-b-2xl"> 
+                        {/* Grafik Bebas */}
+                        <div className="absolute top-2 left-12 w-10 h-10 rounded-full bg-white/5 shape-float-1 pointer-events-none border border-white/10"></div>
+                        <div className="absolute bottom-3 right-32 w-8 h-8 bg-white/5 shape-float-2 pointer-events-none transform rotate-45 border border-white/10"></div>
+                        <div className="absolute top-4 left-1/2 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[20px] border-b-white/5 shape-float-3 pointer-events-none"></div>
+                        <div className="absolute inset-0 header-ornament pointer-events-none"></div>
+                        
+                        <div className="absolute top-1/2 right-10 text-white/5 shape-float-1 pointer-events-none">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.1-.36.16-.57.16-.21 0-.41-.06-.57-.16l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.1.36-.16.57-.16.21 0 .41.06.57.16l7.9 4.44c.32.17.53.5.53.88v9z"/>
+                            </svg>
+                        </div>
+                        
+                        <div 
+                            className="absolute inset-0 z-0 opacity-20 pointer-events-none mix-blend-overlay"
+                            style={{
+                                backgroundImage: "url('https://i.ibb.co/FLhLjv5b/Pngtree-beautiful-background-of-high-rise-buildings-2148726.png')",
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center 30%', 
+                                filter: 'grayscale(100%)', 
+                            }}
+                        ></div>
+
+                      <div className="flex items-center gap-4 relative z-10">
+                            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-white/80 hover:text-white rounded">
+                                <Menu size={24} />
+                            </button>
+                            
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center">
+                                    {schoolInfo.logo && (schoolInfo.logo.mode === "upload" ? schoolInfo.logo.data : schoolInfo.logo.url) ? (
+                                      <img
+                                        src={schoolInfo.logo.mode === "upload" ? schoolInfo.logo.data : schoolInfo.logo.url}
+                                        alt="Logo Sekolah"
+                                        className="h-14 w-14 object-contain drop-shadow-md"
+                                      />
+                                    ) : (
+                                      <School size={36} strokeWidth={1.5} className="text-white drop-shadow-md" />
+                                    )}
+                                </div>
+                                
+                                <div className="flex flex-col justify-center">
+                                    <h1 className="text-xl md:text-2xl font-extrabold leading-none tracking-tight text-white drop-shadow-md">
+                                        {schoolInfo.name.toUpperCase()}
+                                    </h1>
+                                    <p className="text-xs font-bold text-blue-100 uppercase tracking-[0.15em] mt-1 drop-shadow-sm">
+                                        Sistem Pengurusan Sekolah
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="hidden md:flex items-center space-x-6 relative z-10">
+                            <div className="text-right hidden lg:block">
+                                <p className="text-sm font-semibold text-blue-200 uppercase tracking-wider">Modul Semasa</p>
+                                <p className="text-sm font-bold text-white drop-shadow-sm">{navItems.find(i => i.id === activeTab)?.label}</p>
+                            </div>
+                            <div className="h-8 w-px bg-white/20 hidden lg:block"></div>
+                            {isAdmin ? (
+                              <div className="flex items-center gap-3">
+                                   <button
+                                     onClick={handleLogout}
+                                     className="text-right hidden md:block leading-tight hover:opacity-90 transition"
+                                   >
+                                      <p className="text-sm font-bold text-white drop-shadow-sm">Pentadbir</p>
+                                      <p className="text-xs text-blue-200">Log Keluar</p>
+                                  </button>
+                                  <button
+                                    onClick={handleLogout}
+                                    className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm shadow ring-2 ring-white/50 backdrop-blur-sm border border-white/10 hover:bg-white/30 transition"
+                                  >
+                                      A
+                                  </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={openAdmin}
+                                className="px-3 py-1.5 rounded-lg border border-white/30 text-xs font-semibold text-white/90 hover:bg-white/10 transition"
+                              >
+                                Log Masuk
+                              </button>
+                            )}
+                        </div>
+                  </header>
+                  </div>
+              </div>
+
+              {/* --- MAIN LAYOUT --- */}
+              <div className="flex pt-28 h-screen overflow-hidden">
+                  
+                  <aside className={`
+                    fixed inset-y-0 left-0 w-64 bg-slate-100 text-slate-600 flex flex-col transition-transform duration-300 ease-in-out z-[60] border-r border-slate-200
+                    ${isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+                    lg:translate-x-0 lg:z-40 lg:fixed lg:top-28 lg:left-8 lg:bottom-4 lg:h-auto lg:border lg:border-slate-200 lg:shadow-xl lg:rounded-lg
+                  `}>
+                    
+                    <div className="lg:hidden h-20 flex items-center justify-end px-4 border-b border-slate-200">
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-500 hover:text-slate-900">
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    <div className="p-4 overflow-y-auto flex-1 custom-scrollbar flex flex-col">
+                      <div className="mb-6 flex-1">
+                        <nav className="space-y-1">
+                          {navItems.map((item) => (
+                            <div key={item.id}>
+                                <button
+                                  onClick={() => {
+                                    if (item.subItems) {
+                                        toggleMenu(item.id);
+                                    } else {
+                                        setActiveTab(item.id);
+                                        setIsMobileMenuOpen(false);
+                                    }
+                                  }}
+                                  className={`w-full flex items-center justify-between px-4 py-3 rounded text-sm font-medium transition-all duration-200 border-l-[3px] ${
+                                    activeTab === item.id 
+                                      ? 'bg-white text-slate-900 border-sky-500 shadow-sm' 
+                                      : 'border-transparent text-slate-500 hover:bg-slate-200 hover:text-slate-900'
+                                  }`}
+                                >
+                                  <div className="flex items-center space-x-3">
+                                      <div className={activeTab === item.id ? 'text-sky-600' : item.color}>
+                                        {item.icon}
+                                      </div>
+                                      <span className="tracking-wide">{item.label}</span>
+                                  </div>
+                                  {/* Tunjuk Chevron jika ada sub-menu */}
+                                  {item.subItems && (
+                                    <div className={`transition-transform duration-200 ${expandedMenus[item.id] ? 'rotate-180' : ''}`}>
+                                        <ChevronDown size={16} />
+                                    </div>
+                                  )}
+                                </button>
+
+                                {/* Render Sub-menu jika expanded */}
+                                {item.subItems && expandedMenus[item.id] && (
+                                    <div className="ml-4 mt-1 pl-4 border-l border-slate-300 space-y-1">
+                                        {item.subItems.map(sub => (
+                                            <button
+                                                key={sub.id}
+                                                onClick={() => {
+                                                    if (sub.url) {
+                                                        window.open(sub.url, "_blank", "noopener,noreferrer");
+                                                    } else {
+                                                        setActiveTab(sub.id);
+                                                    }
+                                                    setIsMobileMenuOpen(false);
+                                                }}
+                                                className={`w-full text-left px-3 py-2 rounded text-xs font-medium transition-colors ${
+                                                    activeTab === sub.id 
+                                                    ? 'text-sky-700 bg-sky-50 font-bold' 
+                                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                                                }`}
+                                            >
+                                                {sub.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                          ))}
+                        </nav>
+                      </div>
+
+                      <div className="mt-auto pt-6 border-t border-slate-200 px-2 pb-4">
+                        <button className="flex items-center space-x-3 text-slate-500 hover:text-sky-600 text-sm font-medium w-full px-4 py-2 hover:bg-slate-200 rounded transition-colors">
+                            <LogOut size={18} />
+                            <span>Log Keluar</span>
+                        </button>
+                      </div>
+                    </div>
+                  </aside>
+
+                  <main className="flex-1 lg:ml-72 relative z-10 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
+                        <div className="max-w-6xl mx-auto">
+                            {renderContent()}
+                        </div>
+                        <footer className="mt-12 text-center text-slate-600 text-xs py-6 border-t border-slate-200/50 bg-white/30 backdrop-blur-sm rounded-lg mt-8">
+                            <p className="font-medium">&copy; 2026 SISTEM PENGURUSAN SEKOLAH. HAK CIPTA TERPELIHARA.</p>
+                        </footer>
+                  </main>
+
+              </div>
+
+              {showLogin && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+                  <div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-slate-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-slate-800">Log Masuk Admin</h3>
+                      <button
+                        onClick={() => setShowLogin(false)}
+                        className="text-slate-400 hover:text-slate-700"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <label className="text-xs font-semibold text-slate-600">
+                        ID Pengguna
+                        <input
+                          type="text"
+                          value={loginForm.username}
+                          onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                          className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                        />
+                      </label>
+                      <label className="text-xs font-semibold text-slate-600">
+                        Kata Laluan
+                        <input
+                          type="password"
+                          value={loginForm.password}
+                          onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                          className="mt-2 w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300"
+                        />
+                      </label>
+                      {loginError && (
+                        <p className="text-xs text-rose-500">{loginError}</p>
+                      )}
+                      <div className="flex items-center justify-between pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowLogin(false)}
+                          className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition"
+                        >
+                          Log Masuk
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {isMobileMenuOpen && (
+                <div 
+                  className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[55] lg:hidden"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                ></div>
+              )}
+
+              {hmCropOpen && (
+                <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+                  <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl border border-slate-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-slate-800">Edit Foto Guru Besar</h3>
+                      <button
+                        onClick={cancelHmCrop}
+                        className="text-slate-400 hover:text-slate-700"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2">
+                        <div className="w-full bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                          <img id="hm-crop-image" src={hmCropImage} alt="Crop" className="w-full h-auto block" />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <label className="text-xs font-semibold text-slate-600">
+                          Zoom
+                          <input
+                            type="range"
+                            min="1"
+                            max="3"
+                            step="0.01"
+                            value={hmCropZoom}
+                            onChange={(e) => {
+                              const next = Number(e.target.value);
+                              setHmCropZoom(next);
+                              if (hmCropperRef.current) {
+                                hmCropperRef.current.zoomTo(next);
+                              }
+                            }}
+                            className="mt-2 w-full"
+                          />
+                        </label>
+                        <button
+                          onClick={() => {
+                            if (hmCropperRef.current) {
+                              hmCropperRef.current.reset();
+                              setHmCropZoom(1);
+                            }
+                          }}
+                          className="w-full px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={applyHmCrop}
+                          className="w-full px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 transition"
+                        >
+                          Simpan Potongan
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
