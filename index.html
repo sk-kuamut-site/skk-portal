@@ -817,6 +817,8 @@
           const ADMIN_USERNAME = "admin";
           const ADMIN_PASSWORD = "admin123";
           const SCHOOL_INFO_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4JdOFroIT9UltdYJBTutnhvBzgiEs06Q68bSCFjwQjcxpgmPBhDllJc2k9j4SNUn6Wl8IrNzrHiAz/pub?output=csv";
+          const SCHOOL_INFO_SHEET_ID = ""; // TODO: paste editable Sheet ID (not the published CSV URL)
+          const SCHOOL_INFO_SHEET_NAME = "Sheet1";
           const CALENDAR_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTCCe7oOzR-NunRqWbdMLyZGl69fkYPGBbwqCRO2pmfKVNFjoHCy7lgkKwkYNi8_t15XJpeaL9pUI1u/pub?output=csv";
           const NEWS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM7phwJ5AVJBlfvhFoZ9YNI-bU4hM4U9_qKayboDA5l70jrUeNm1x6btc9QjyaSMt_kQXLQi7_MzOn/pub?output=csv";
           const DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwJEGQHdo0qbysjrCLoPLxtHz_tjG3-Tk8jY7EiYHGtpSE98gucsZvyhxURhhkux3AN/exec";
@@ -1232,6 +1234,27 @@
             return json.url;
           };
 
+          const updateSchoolInfoKey = async (key, value) => {
+            if (!SCHOOL_INFO_SHEET_ID) return;
+            const payload = {
+              apiKey: DRIVE_UPLOAD_API_KEY,
+              action: "updateSchoolInfo",
+              sheetId: SCHOOL_INFO_SHEET_ID,
+              sheetName: SCHOOL_INFO_SHEET_NAME,
+              key,
+              value,
+            };
+            const res = await fetch(DRIVE_UPLOAD_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!json.ok) {
+              throw new Error(json.error || "Gagal kemaskini Google Sheet.");
+            }
+          };
+
           const handlePentadbiranUpload = async (index, file) => {
             if (!file) return;
             setUploadStatus("Muat naik gambar pentadbiran...");
@@ -1331,6 +1354,7 @@
             try {
               const url = await uploadFileToDrive(file, `background-${Date.now()}`);
               setDraftBackground({ mode: "url", url, data: "" });
+              await updateSchoolInfoKey("background_url", url);
               setUploadStatus("Latar belakang berjaya dimuat naik.");
             } catch (err) {
               setUploadStatus("Gagal muat naik latar belakang.");
@@ -1346,6 +1370,7 @@
                 ...prev,
                 logo: { ...(prev.logo || { mode: "url", url: "" }), mode: "url", url, data: "" },
               }));
+              await updateSchoolInfoKey("logo_url", url);
               setUploadStatus("Logo sekolah berjaya dimuat naik.");
             } catch (err) {
               setUploadStatus("Gagal muat naik logo sekolah.");
@@ -1499,7 +1524,9 @@
                     mode: "url",
                   }
                 }));
-                setUploadStatus("Foto Guru Besar berjaya dimuat naik.");
+                return updateSchoolInfoKey("hm_photo_url", url).then(() => {
+                  setUploadStatus("Foto Guru Besar berjaya dimuat naik.");
+                });
               })
               .catch(() => {
                 setUploadStatus("Gagal muat naik foto Guru Besar.");
