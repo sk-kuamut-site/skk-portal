@@ -816,6 +816,9 @@
         function App() {
           const ADMIN_USERNAME = "admin";
           const ADMIN_PASSWORD = "admin123";
+          const SCHOOL_INFO_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4JdOFroIT9UltdYJBTutnhvBzgiEs06Q68bSCFjwQjcxpgmPBhDllJc2k9j4SNUn6Wl8IrNzrHiAz/pub?output=csv";
+          const CALENDAR_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTCCe7oOzR-NunRqWbdMLyZGl69fkYPGBbwqCRO2pmfKVNFjoHCy7lgkKwkYNi8_t15XJpeaL9pUI1u/pub?output=csv";
+          const NEWS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM7phwJ5AVJBlfvhFoZ9YNI-bU4hM4U9_qKayboDA5l70jrUeNm1x6btc9QjyaSMt_kQXLQi7_MzOn/pub?output=csv";
           const SHEET_ID = "1CTW31-X7CLGsQhgbbhkitaRbCavB60XPwgcbqOs9L-8";
           const SHEET_CSV_URL_GURU = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
           const SHEET_CSV_URL_KELAS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=KELAS`;
@@ -882,6 +885,126 @@
             const timer = setInterval(() => setCurrentTime(new Date()), 1000);
             return () => clearInterval(timer);
           }, []);
+
+          useEffect(() => {
+            if (!window.Papa) return;
+            Papa.parse(SCHOOL_INFO_SHEET_URL, {
+              download: true,
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                const map = {};
+                results.data.forEach((row) => {
+                  const key = String(row.key || "").trim();
+                  if (!key) return;
+                  map[key] = row.value ?? "";
+                });
+                if (!Object.keys(map).length) return;
+
+                const toNumber = (val, fallback) => {
+                  const num = Number(val);
+                  return Number.isFinite(num) ? num : fallback;
+                };
+
+                const nextSchoolInfo = {
+                  ...INITIAL_SCHOOL_INFO,
+                  ...schoolInfo,
+                  name: map.name || schoolInfo.name,
+                  code: map.code || schoolInfo.code,
+                  motto: map.motto || schoolInfo.motto,
+                  phone: map.phone || schoolInfo.phone,
+                  hmName: map.hm_name || schoolInfo.hmName,
+                  hmMessage: map.hm_message || schoolInfo.hmMessage,
+                  studentsCount: toNumber(map.students_count, schoolInfo.studentsCount),
+                  teachersCount: toNumber(map.teachers_count, schoolInfo.teachersCount),
+                  attendanceRate: toNumber(map.attendance_rate, schoolInfo.attendanceRate),
+                  logo: {
+                    mode: "url",
+                    url: map.logo_url || (schoolInfo.logo ? schoolInfo.logo.url : ""),
+                    data: "",
+                  },
+                  hmPhoto: {
+                    mode: "url",
+                    url: map.hm_photo_url || (schoolInfo.hmPhoto ? schoolInfo.hmPhoto.url : ""),
+                    data: "",
+                  },
+                };
+
+                const nextBackground = {
+                  mode: "url",
+                  url: map.background_url || background.url,
+                  data: "",
+                };
+
+                setSchoolInfo(nextSchoolInfo);
+                setDraftSchoolInfo(nextSchoolInfo);
+                setBackground(nextBackground);
+                setDraftBackground(nextBackground);
+
+                saveLocal("schoolInfo", nextSchoolInfo);
+                saveLocal("background", nextBackground);
+              },
+            });
+          }, [SCHOOL_INFO_SHEET_URL]);
+
+          useEffect(() => {
+            if (!window.Papa) return;
+            Papa.parse(CALENDAR_SHEET_URL, {
+              download: true,
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                const rows = (results.data || [])
+                  .map((row, idx) => {
+                    const date = String(row.date || row.tarikh || "").trim();
+                    const title = String(row.title || row.program || "").trim();
+                    const category = String(row.category || row.kategori || "").trim();
+                    if (!date || !title) return null;
+                    return {
+                      id: row.id ? Number(row.id) || row.id : Date.now() + idx,
+                      date,
+                      title,
+                      category: category || "Program",
+                    };
+                  })
+                  .filter(Boolean);
+
+                if (!rows.length) return;
+                setCalendarEvents(rows);
+                saveLocal("calendarEvents", rows);
+              },
+            });
+          }, [CALENDAR_SHEET_URL]);
+
+          useEffect(() => {
+            if (!window.Papa) return;
+            Papa.parse(NEWS_SHEET_URL, {
+              download: true,
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                const rows = (results.data || [])
+                  .map((row, idx) => {
+                    const title = String(row.title || row.tajuk || "").trim();
+                    const date = String(row.date || row.tarikh || "").trim();
+                    const category = String(row.category || row.kategori || "").trim();
+                    if (!title) return null;
+                    return {
+                      id: row.id ? Number(row.id) || row.id : Date.now() + idx,
+                      title,
+                      date: date || new Date().toLocaleDateString("ms-MY"),
+                      category: category || "Umum",
+                    };
+                  })
+                  .filter(Boolean);
+
+                if (!rows.length) return;
+                setNewsUpdates(rows);
+                setDraftNewsUpdates(rows);
+                saveLocal("newsUpdates", rows);
+              },
+            });
+          }, [NEWS_SHEET_URL]);
 
           useEffect(() => {
             const parseCsvLine = (line) => {
