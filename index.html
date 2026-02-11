@@ -1348,6 +1348,11 @@
             setter(list.filter((_, i) => i !== index));
           };
 
+          const resolveImageSrc = (asset) => {
+            if (!asset) return "";
+            return asset.data || asset.url || "";
+          };
+
           const resetBackground = () => {
             setDraftBackground(background);
             setBackgroundStatus("");
@@ -1608,9 +1613,9 @@
                       <div className="bg-white rounded-lg p-8 text-slate-800 relative overflow-hidden shadow-lg border border-slate-200">
                         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-8">
                         <div className="w-44 h-64 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-                            {schoolInfo.hmPhoto && (schoolInfo.hmPhoto.mode === "upload" ? schoolInfo.hmPhoto.data : schoolInfo.hmPhoto.url) ? (
+                            {resolveImageSrc(schoolInfo.hmPhoto) ? (
                               <img
-                                src={schoolInfo.hmPhoto.mode === "upload" ? schoolInfo.hmPhoto.data : schoolInfo.hmPhoto.url}
+                                src={resolveImageSrc(schoolInfo.hmPhoto)}
                                 alt="Guru Besar"
                                 className="w-full h-full object-cover"
                               />
@@ -2920,16 +2925,10 @@
                         )}
                         <div className="md:col-span-2">
                           <div className="mt-2 rounded border border-slate-200 bg-white px-4 py-3 flex items-center justify-center">
-                            {draftHmPhoto.mode === "upload" ? (
-                              draftHmPhoto.data ? (
-                                <img src={draftHmPhoto.data} alt="Foto Guru Besar" className="h-40 w-28 object-cover rounded-md" />
-                              ) : (
-                                <p className="text-xs text-slate-400">Tiada foto dimuat naik.</p>
-                              )
-                            ) : draftHmPhoto.url ? (
-                              <img src={draftHmPhoto.url} alt="Foto Guru Besar" className="h-40 w-28 object-cover rounded-md" />
+                            {resolveImageSrc(draftHmPhoto) ? (
+                              <img src={resolveImageSrc(draftHmPhoto)} alt="Foto Guru Besar" className="h-40 w-28 object-cover rounded-md" />
                             ) : (
-                              <p className="text-xs text-slate-400">Tiada URL foto.</p>
+                              <p className="text-xs text-slate-400">Tiada foto dimuat naik.</p>
                             )}
                           </div>
                         </div>
@@ -3243,7 +3242,7 @@
               <div 
                  className="fixed inset-0 z-[-1] pointer-events-none"
                  style={{
-                   backgroundImage: `url('${background.mode === "upload" ? background.data : background.url}')`,
+                   backgroundImage: `url('${resolveImageSrc(background)}')`,
                    backgroundSize: 'cover',
                    backgroundPosition: 'center',
                    backgroundRepeat: 'no-repeat',
@@ -3301,9 +3300,9 @@
                             
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center justify-center">
-                                    {schoolInfo.logo && (schoolInfo.logo.mode === "upload" ? schoolInfo.logo.data : schoolInfo.logo.url) ? (
+                                    {resolveImageSrc(schoolInfo.logo) ? (
                                       <img
-                                        src={schoolInfo.logo.mode === "upload" ? schoolInfo.logo.data : schoolInfo.logo.url}
+                                        src={resolveImageSrc(schoolInfo.logo)}
                                         alt="Logo Sekolah"
                                         className="h-14 w-14 object-contain drop-shadow-md"
                                       />
