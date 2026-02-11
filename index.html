@@ -1185,6 +1185,26 @@
             });
           };
 
+          const postToAppsScript = async (payload) => {
+            const res = await fetch(DRIVE_UPLOAD_URL, {
+              method: "POST",
+              // Use text/plain to avoid CORS preflight with Apps Script
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(payload),
+            });
+            const rawText = await res.text();
+            let json = null;
+            try {
+              json = JSON.parse(rawText);
+            } catch (_) {
+              throw new Error(`Server balas bukan JSON (HTTP ${res.status}).`);
+            }
+            if (!res.ok) {
+              throw new Error(json.error || `HTTP ${res.status}`);
+            }
+            return json;
+          };
+
           const uploadFileToDrive = async (file, fileNameOverride) => {
             const base64 = await new Promise((resolve, reject) => {
               const reader = new FileReader();
@@ -1204,13 +1224,7 @@
               base64,
             };
 
-            const res = await fetch(DRIVE_UPLOAD_URL, {
-              method: "POST",
-              // Use text/plain to avoid CORS preflight with Apps Script
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify(payload),
-            });
-            const json = await res.json();
+            const json = await postToAppsScript(payload);
             if (!json.ok || !json.url) {
               throw new Error(json.error || "Gagal muat naik ke Drive.");
             }
@@ -1229,13 +1243,7 @@
               mimeType,
               base64,
             };
-            const res = await fetch(DRIVE_UPLOAD_URL, {
-              method: "POST",
-              // Use text/plain to avoid CORS preflight with Apps Script
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify(payload),
-            });
-            const json = await res.json();
+            const json = await postToAppsScript(payload);
             if (!json.ok || !json.url) {
               throw new Error(json.error || "Gagal muat naik ke Drive.");
             }
@@ -1252,12 +1260,7 @@
               key,
               value,
             };
-            const res = await fetch(DRIVE_UPLOAD_URL, {
-              method: "POST",
-              headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify(payload),
-            });
-            const json = await res.json();
+            const json = await postToAppsScript(payload);
             if (!json.ok) {
               throw new Error(json.error || "Gagal kemaskini Google Sheet.");
             }
@@ -1530,32 +1533,43 @@
               },
             }));
             setUploadStatus("Muat naik foto Guru Besar...");
-            uploadDataUrlToDrive(dataUrl, `guru-besar-${Date.now()}.jpg`)
-              .then((url) => {
+            canvas.toBlob(async (blob) => {
+              if (!blob) {
+                setUploadStatus("Gagal proses gambar crop.");
+                setHmCropOpen(false);
+                return;
+              }
+              try {
+                const fileName = `guru-besar-${Date.now()}.jpg`;
+                const file = new File([blob], fileName, { type: "image/jpeg" });
+                const url = await uploadFileToDrive(file, fileName);
+                const nextHmPhoto = { mode: "url", url, data: "" };
                 setDraftSchoolInfo(prev => ({
                   ...prev,
-                  hmPhoto: {
-                    ...(prev.hmPhoto || { mode: "url", url: "" }),
-                    url,
-                    data: "",
-                    mode: "url",
-                  }
+                  hmPhoto: nextHmPhoto
                 }));
-                return updateSchoolInfoKey("hm_photo_url", url).then(() => {
-                  setUploadStatus("Foto Guru Besar berjaya dimuat naik.");
+                setSchoolInfo(prev => {
+                  const next = {
+                    ...prev,
+                    hmPhoto: nextHmPhoto,
+                  };
+                  saveLocal("schoolInfo", next);
+                  return next;
                 });
-              })
-              .catch((err) => {
-                const message = String(err?.message || "").toLowerCase();
-                if (message.includes("sheet")) {
+                await updateSchoolInfoKey("hm_photo_url", url);
+                setUploadStatus("Foto Guru Besar berjaya dimuat naik.");
+              } catch (err) {
+                const message = String(err?.message || "");
+                const lowered = message.toLowerCase();
+                if (lowered.includes("sheet")) {
                   setUploadStatus("Foto berjaya dimuat naik tetapi gagal kemaskini Google Sheet.");
-                  return;
+                } else {
+                  setUploadStatus(`Gagal muat naik ke Drive: ${message || "ralat tidak diketahui"}. Foto disimpan setempat.`);
                 }
-                setUploadStatus("Gagal muat naik ke Drive. Foto disimpan setempat.");
-              })
-              .finally(() => {
+              } finally {
                 setHmCropOpen(false);
-              });
+              }
+            }, "image/jpeg", 0.9);
           };
 
           const cancelHmCrop = () => {
