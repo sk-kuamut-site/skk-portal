@@ -814,10 +814,18 @@
         };
 
         function App() {
+          const extractGoogleSheetId = (value) => {
+            const raw = String(value || "").trim();
+            if (!raw) return "";
+            const match = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/i);
+            return match ? match[1] : raw;
+          };
+
           const ADMIN_USERNAME = "admin";
           const ADMIN_PASSWORD = "admin123";
           const SCHOOL_INFO_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4JdOFroIT9UltdYJBTutnhvBzgiEs06Q68bSCFjwQjcxpgmPBhDllJc2k9j4SNUn6Wl8IrNzrHiAz/pub?output=csv";
-          const SCHOOL_INFO_SHEET_ID = "https://docs.google.com/spreadsheets/d/1-B_tSAl9iCUqi7PCSo5GlSdHMAneGk56tgU5ClvmfaI/edit?gid=0#gid=0"; // TODO: paste editable Sheet ID (not the published CSV URL)
+          const SCHOOL_INFO_SHEET_ID_INPUT = "https://docs.google.com/spreadsheets/d/1-B_tSAl9iCUqi7PCSo5GlSdHMAneGk56tgU5ClvmfaI/edit?gid=0#gid=0";
+          const SCHOOL_INFO_SHEET_ID = extractGoogleSheetId(SCHOOL_INFO_SHEET_ID_INPUT);
           const SCHOOL_INFO_SHEET_NAME = "SCHOOL_INFO";
           const CALENDAR_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTCCe7oOzR-NunRqWbdMLyZGl69fkYPGBbwqCRO2pmfKVNFjoHCy7lgkKwkYNi8_t15XJpeaL9pUI1u/pub?output=csv";
           const NEWS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSM7phwJ5AVJBlfvhFoZ9YNI-bU4hM4U9_qKayboDA5l70jrUeNm1x6btc9QjyaSMt_kQXLQi7_MzOn/pub?output=csv";
@@ -1512,6 +1520,15 @@
               imageSmoothingQuality: "high",
             });
             const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+            // Show immediate local preview first so user can still save even if remote upload fails.
+            setDraftSchoolInfo((prev) => ({
+              ...prev,
+              hmPhoto: {
+                ...(prev.hmPhoto || { mode: "upload", url: "", data: "" }),
+                mode: "upload",
+                data: dataUrl,
+              },
+            }));
             setUploadStatus("Muat naik foto Guru Besar...");
             uploadDataUrlToDrive(dataUrl, `guru-besar-${Date.now()}.jpg`)
               .then((url) => {
@@ -1528,8 +1545,13 @@
                   setUploadStatus("Foto Guru Besar berjaya dimuat naik.");
                 });
               })
-              .catch(() => {
-                setUploadStatus("Gagal muat naik foto Guru Besar.");
+              .catch((err) => {
+                const message = String(err?.message || "").toLowerCase();
+                if (message.includes("sheet")) {
+                  setUploadStatus("Foto berjaya dimuat naik tetapi gagal kemaskini Google Sheet.");
+                  return;
+                }
+                setUploadStatus("Gagal muat naik ke Drive. Foto disimpan setempat.");
               })
               .finally(() => {
                 setHmCropOpen(false);
